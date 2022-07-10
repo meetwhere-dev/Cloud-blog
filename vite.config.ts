@@ -1,9 +1,12 @@
 import path from 'path'
+import { resolve } from 'path'
+import fs from 'fs-extra'
+import matter from 'gray-matter'
 import { defineConfig } from 'vite'
 import Vue from '@vitejs/plugin-vue'
 import Pages from 'vite-plugin-pages'
 import generateSitemap from 'vite-ssg-sitemap'
-import Layouts from 'vite-plugin-vue-layouts'
+// import Layouts from 'vite-plugin-vue-layouts'
 import Components from 'unplugin-vue-components/vite'
 import AutoImport from 'unplugin-auto-import/vite'
 import Markdown from 'vite-plugin-vue-markdown'
@@ -11,6 +14,10 @@ import { VitePWA } from 'vite-plugin-pwa'
 import VueI18n from '@intlify/vite-plugin-vue-i18n'
 import Inspect from 'vite-plugin-inspect'
 import Prism from 'markdown-it-prism'
+import Anchor from 'markdown-it-anchor'
+// @ts-expect-error missing types
+import TOC from 'markdown-it-table-of-contents'
+import { slugify } from './scripts/slugify'
 import LinkAttributes from 'markdown-it-link-attributes'
 import Unocss from 'unocss/vite'
 
@@ -32,10 +39,21 @@ export default defineConfig({
     // https://github.com/hannoeru/vite-plugin-pages
     Pages({
       extensions: ['vue', 'md'],
+      extendRoute(route) {
+        const path = resolve(__dirname, route.component.slice(1))
+
+        if (!path.includes('README')) {
+          const md = fs.readFileSync(path, 'utf-8')
+          const { data } = matter(md)
+          route.meta = Object.assign(route.meta || {}, { frontmatter: data })  
+        }
+
+        return route
+      }
     }),
 
     // https://github.com/JohnCampionJr/vite-plugin-vue-layouts
-    Layouts(),
+    // Layouts(),
 
     // https://github.com/antfu/unplugin-auto-import
     AutoImport({
@@ -71,17 +89,33 @@ export default defineConfig({
     // https://github.com/antfu/vite-plugin-vue-markdown
     // Don't need this? Try vitesse-lite: https://github.com/antfu/vitesse-lite
     Markdown({
+      wrapperComponent: 'post',
       wrapperClasses: markdownWrapperClasses,
       headEnabled: true,
+      markdownItOptions: {
+        quotes: '""\'\'',
+      },
       markdownItSetup(md) {
-        // https://prismjs.com/
         md.use(Prism)
+        md.use(Anchor, {
+          slugify,
+          permalink: Anchor.permalink.linkInsideHeader({
+            symbol: '#',
+            renderAttrs: () => ({ 'aria-hidden': 'true' }),
+          }),
+        })
+
         md.use(LinkAttributes, {
           matcher: (link: string) => /^https?:\/\//.test(link),
           attrs: {
             target: '_blank',
             rel: 'noopener',
           },
+        })
+
+        md.use(TOC, {
+          includeLevel: [1, 2, 3],
+          slugify,
         })
       },
     }),

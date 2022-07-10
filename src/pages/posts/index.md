@@ -1,0 +1,5 @@
+---
+display: title.blogs
+---
+
+<ListPosts />
