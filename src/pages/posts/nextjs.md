@@ -2,7 +2,7 @@
 title: Next.Js
 description: Next.Js 体验
 date: 2021-09-01T16:00:00.000+00:00
-duration: 30min
+duration: 12min
 ---
 
 > Next.Js 是一个服务端渲染的 React 框架

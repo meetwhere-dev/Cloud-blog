@@ -1,8 +1,8 @@
 ---
 title: Opencv Face Detect
 description: 
-date: 2022-03-01T16:00:00.000+00:00
-duration: 30min
+date: 2021-07-25T16:00:00.000+00:00
+duration: 11min
 ---
 
 > 在浏览器端实现人脸识别

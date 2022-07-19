@@ -2,7 +2,7 @@
 title: Vite 静态资源引入问题
 description: 
 date: 2022-03-01T16:00:00.000+00:00
-duration: 30min
+duration: 10min
 ---
 
 最近将公司的项目迁移至 vite + yarn
