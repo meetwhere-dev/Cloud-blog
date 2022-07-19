@@ -1,6 +1,13 @@
 <script setup lang='ts'>
 import dayjs from 'dayjs'
 
+const { frontmatter } = defineProps({
+  frontmatter: {
+    type: Object,
+    required: true,
+  },
+})
+
 function formatDate(d: string | Date) {
   const date = dayjs(d)
   if (date.year() === dayjs().year())
@@ -8,12 +15,6 @@ function formatDate(d: string | Date) {
   return date.format('MMM D, YYYY')
 }
 
-const { frontmatter } = defineProps({
-  frontmatter: {
-    type: Object,
-    required: true,
-  },
-})
 const router = useRouter()
 const route = useRoute()
 const content = ref<HTMLDivElement>()

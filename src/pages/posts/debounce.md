@@ -54,47 +54,46 @@ document.addEventListener('mousemove', debounce(function () {
 
 ```js
 /**
- * 
+ *
  * @param fn 要节流的函数
  * @param delay 延迟时间
  */
-function throttle (fn, delay = 0) {
+function throttle(fn, delay = 0) {
   // 闭包内记录下 返回的函数 开始执行的时间。
-  let startTime = null;
+  let startTime = null
   return function (...args) {
-    let now = new Date();
+    const now = new Date()
     // 根据与上次执行的时间差再次执行该函数
     if (!startTime || now - startTime > delay) {
       // 刷新开始执行时间
-      startTime = now;
-      fn(...args);
+      startTime = now
+      fn(...args)
     }
   }
 }
 
 // 写法2
-function throttle2 (fn, delay = 0) {
-  let timer = null;
+function throttle2(fn, delay = 0) {
+  let timer = null
   return function (...args) {
-    if (timer) return;
+    if (timer)
+      return
     timer = setTimeout(() => {
-      fn(...args);
-      clearTimeout(timer);
-    }, delay);
+      fn(...args)
+      clearTimeout(timer)
+    }, delay)
   }
 }
 
-
 // 用法
-const _throttleFn = throttle(function (x) {
-  console.log('x:', x);
+const _throttleFn = throttle((x) => {
+  console.log('x:', x)
 })
 
-for (let i = 0; i < 10; i++) {
+for (let i = 0; i < 10; i++)
   _throttleFn(i)
-}
 
-document.addEventListener('mousemove', throttle(function () {
-  console.log('now:', +new Date());
-}, 500));
+document.addEventListener('mousemove', throttle(() => {
+  console.log('now:', +new Date())
+}, 500))
 ```

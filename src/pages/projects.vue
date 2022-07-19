@@ -1,4 +1,3 @@
-
 <script setup lang='ts'>
 const router = useRouter()
 const route = useRoute()
@@ -11,23 +10,23 @@ const projects = [{
   link: '/2048/index.html',
   desc: '小游戏2048.',
   date: '2019-06-22T08:00:00.000+00:00',
-  icon: 'i-arcticons-a2048'
-},{
+  icon: 'i-arcticons-a2048',
+}, {
   name: 'Firework',
   link: '/firework/index.html',
   desc: '烟花.',
-  icon: 'i-emojione-monotone-fireworks'
-},{
+  icon: 'i-emojione-monotone-fireworks',
+}, {
   name: 'illustrator-demo',
   link: '/illustrator-demo/index.html',
   desc: '矢量绘图.',
-  icon: 'i-cib-adobe-illustrator'
-},{
+  icon: 'i-cib-adobe-illustrator',
+}, {
   name: 'faceDetect',
   link: '/faceDetect/index.html',
   desc: '人脸识别.',
-  icon: 'i-iconoir-face-id'
-},]
+  icon: 'i-iconoir-face-id',
+}]
 
 onMounted(() => {
   const navigate = () => {
@@ -103,7 +102,7 @@ onMounted(() => {
       </a>
     </ul>
   </article>
-  
+
   <div v-if="route.path !== '/'" class="prose m-auto mt-8 mb-8 text-left">
     <router-link
       :to="route.path.split('/').slice(0, -1).join('/') || '/'"

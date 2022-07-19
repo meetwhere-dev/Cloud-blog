@@ -1,5 +1,4 @@
-import path from 'path'
-import { resolve } from 'path'
+import path, { resolve } from 'path'
 import fs from 'fs-extra'
 import matter from 'gray-matter'
 import { defineConfig } from 'vite'
@@ -17,9 +16,9 @@ import Prism from 'markdown-it-prism'
 import Anchor from 'markdown-it-anchor'
 // @ts-expect-error missing types
 import TOC from 'markdown-it-table-of-contents'
-import { slugify } from './scripts/slugify'
 import LinkAttributes from 'markdown-it-link-attributes'
 import Unocss from 'unocss/vite'
+import { slugify } from './scripts/slugify'
 
 const markdownWrapperClasses = 'prose prose-sm m-auto text-left'
 
@@ -45,11 +44,11 @@ export default defineConfig({
         if (!path.includes('README')) {
           const md = fs.readFileSync(path, 'utf-8')
           const { data } = matter(md)
-          route.meta = Object.assign(route.meta || {}, { frontmatter: data })  
+          route.meta = Object.assign(route.meta || {}, { frontmatter: data })
         }
 
         return route
-      }
+      },
     }),
 
     // https://github.com/JohnCampionJr/vite-plugin-vue-layouts
