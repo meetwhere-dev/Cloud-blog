@@ -6,6 +6,12 @@ const content = ref<HTMLDivElement>()
 const { t } = useI18n()
 
 const projects = [{
+  name: 'Wechat Annual Report 2023',
+  link: '/wechat-annual-report/',
+  desc: '微信年报2023.',
+  date: '2024-02-07T08:00:00.000+00:00',
+  icon: 'i-carbon:report',
+}, {
   name: '2048',
   link: '/2048/index.html',
   desc: '小游戏2048.',
