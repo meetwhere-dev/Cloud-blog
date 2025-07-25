@@ -9,7 +9,7 @@ const projects = [{
   name: 'Wechat Annual Report 2024',
   link: 'https://s.femometer.com/upload/annual_report_generator/report.html?path=https://s.femometer.com/upload/annual_report/1734485400123.json',
   desc: '微信年报2024.',
-  date: '2024-12-07T08:00:00.000+00:00',
+  date: '2024-12-25T08:00:00.000+00:00',
   icon: 'i-carbon:report',
 }, {
   name: '2048',
