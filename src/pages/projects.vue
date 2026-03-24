@@ -5,7 +5,14 @@ const content = ref<HTMLDivElement>()
 
 const { t } = useI18n()
 
-const projects = [{
+const projects = [
+  {
+  name: 'Epub English Book Reader',
+  link: 'https://epub.meetlolita.com/',
+  desc: 'Epub 英语书阅读器',
+  date: '2026-03-24T08:00:00.000+00:00',
+  icon: 'i-material-symbols:menu-book-sharp',
+},{
   name: 'Wechat Annual Report 2024',
   link: 'https://s.femometer.com/upload/annual_report_generator/report.html?path=https://s.femometer.com/upload/annual_report/1734485400123.json',
   desc: '微信年报2024.',
