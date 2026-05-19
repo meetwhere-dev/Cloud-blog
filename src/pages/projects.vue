@@ -7,39 +7,39 @@ const { t } = useI18n()
 
 const projects = [
   {
-  name: 'Epub English Book Reader',
-  link: 'https://epub.meetlolita.com/',
-  desc: 'Epub 英语书阅读器',
-  date: '2026-03-24T08:00:00.000+00:00',
-  icon: 'i-material-symbols:menu-book-sharp',
-},{
-  name: 'Wechat Annual Report 2024',
-  link: 'https://s.femometer.com/upload/annual_report_generator/report.html?path=https://s.femometer.com/upload/annual_report/1734485400123.json',
-  desc: '微信年报2024.',
-  date: '2024-12-25T08:00:00.000+00:00',
-  icon: 'i-carbon:report',
-}, {
-  name: '2048',
-  link: '/2048/index.html',
-  desc: '小游戏2048.',
-  date: '2019-06-22T08:00:00.000+00:00',
-  icon: 'i-arcticons-a2048',
-}, {
-  name: 'Firework',
-  link: '/firework/index.html',
-  desc: '烟花.',
-  icon: 'i-emojione-monotone-fireworks',
-}, {
-  name: 'illustrator-demo',
-  link: '/illustrator-demo/index.html',
-  desc: '矢量绘图.',
-  icon: 'i-cib-adobe-illustrator',
-}, {
-  name: 'faceDetect',
-  link: '/faceDetect/index.html',
-  desc: '人脸识别.',
-  icon: 'i-iconoir-face-id',
-}]
+    name: 'Epub English Book Reader',
+    link: 'https://epub.meetlolita.com/',
+    desc: 'Epub 英语书阅读器',
+    date: '2026-03-24T08:00:00.000+00:00',
+    icon: 'i-material-symbols:menu-book-sharp',
+  }, {
+    name: 'Wechat Annual Report 2024',
+    link: 'https://s.femometer.com/upload/annual_report_generator/report.html?path=https://s.femometer.com/upload/annual_report/1734485400123.json',
+    desc: '微信年报2024.',
+    date: '2024-12-25T08:00:00.000+00:00',
+    icon: 'i-carbon:report',
+  }, {
+    name: '2048',
+    link: '/2048/index.html',
+    desc: '小游戏2048.',
+    date: '2019-06-22T08:00:00.000+00:00',
+    icon: 'i-arcticons-a2048',
+  }, {
+    name: 'Firework',
+    link: '/firework/index.html',
+    desc: '烟花.',
+    icon: 'i-emojione-monotone-fireworks',
+  }, {
+    name: 'illustrator-demo',
+    link: '/illustrator-demo/index.html',
+    desc: '矢量绘图.',
+    icon: 'i-cib-adobe-illustrator',
+  }, {
+    name: 'faceDetect',
+    link: '/faceDetect/index.html',
+    desc: '人脸识别.',
+    icon: 'i-iconoir-face-id',
+  }]
 
 onMounted(() => {
   const navigate = () => {
