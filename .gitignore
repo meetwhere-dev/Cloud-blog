@@ -7,3 +7,11 @@ dist-ssr
 node_modules
 .idea/
 *.log
+
+.env
+.env.*
+!.env.example
+.vercel/
+server/generated/*.json
+
+.pnpm-store/

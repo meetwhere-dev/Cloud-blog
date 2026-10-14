@@ -27,4 +27,5 @@ useHead({
     <RouterView />
     <Footer />
   </main>
+  <BlogAssistant />
 </template>

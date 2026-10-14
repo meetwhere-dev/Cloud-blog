@@ -1,0 +1,13 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "vite",
+  "buildCommand": "pnpm build",
+  "outputDirectory": "dist",
+  "functions": {
+    "api/chat.mjs": {
+      "maxDuration": 60,
+      "includeFiles": "server/generated/knowledge.json"
+    }
+  },
+  "cleanUrls": true
+}

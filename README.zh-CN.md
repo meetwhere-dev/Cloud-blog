@@ -1,3 +1,9 @@
+# Cloud 博客
+
+本项目部署在 Vercel。新增的博客问答助手使用现有 Markdown 作为知识库，支持流式回答与原文引用。配置与部署步骤见 [博客问答助手](docs/blog-assistant.md)。
+
+以下为原始 Vitesse 模板说明。
+
 <p align='center'>
   <img src='https://user-images.githubusercontent.com/11247099/154486817-f86b8f20-5463-4122-b6e9-930622e757f2.png' alt='Vitesse - Opinionated Vite Starter Template' width='600'/>
 </p>
