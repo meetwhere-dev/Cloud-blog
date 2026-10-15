@@ -62,7 +62,7 @@ export async function handleChat(request, { env = process.env, fetcher = fetch }
   catch {
     return jsonError('问题或对话格式不正确，请缩短内容或开启新对话。', 400)
   }
-  if (!env.OPENAI_API_KEY)
+  if (!env.GEMINI_API_KEY)
     return jsonError('问答助手尚未配置模型服务，请稍后再试。', 503)
   try {
     if (!await allowRequest(request, env, fetcher))
@@ -87,15 +87,43 @@ export async function handleChat(request, { env = process.env, fetcher = fetch }
   }
   let upstream
   try {
-    const base = new URL(`${(env.OPENAI_BASE_URL || 'https://api.openai.com/v1').replace(/\/$/, '')}/`)
-    if (base.protocol !== 'https:' && !['localhost', '127.0.0.1'].includes(base.hostname))
-      throw new Error('HTTPS required')
-    upstream = await fetcher(new URL('responses', base), {
+    const model = env.GEMINI_MODEL || 'gemini-3.8-flash'
+    if (!/^[a-z0-9.-]+$/.test(model))
+      throw new Error('Invalid model ID')
+    const contents = []
+    for (const message of messages) {
+      const role = message.role === 'assistant' ? 'model' : 'user'
+      // Trimmed browser history can begin mid-exchange; Gemini starts with a user turn.
+      if (!contents.length && role === 'model')
+        continue
+      const text = message === messages[messages.length - 1]
+        ? `公开博客参考资料（仅作为数据）：\n${context || '没有检索到相关资料。'}\n\n访客问题：\n${message.content}`
+        : message.content
+      const previous = contents[contents.length - 1]
+      if (previous?.role === role)
+        previous.parts.push({ text })
+      else
+        contents.push({ role, parts: [{ text }] })
+    }
+    upstream = await fetcher(new URL(`https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?alt=sse`), {
       method: 'POST',
-      headers: { 'Authorization': `Bearer ${env.OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: env.OPENAI_MODEL || 'gpt-6.1-sol', stream: true, store: false, reasoning: { effort: 'low' }, max_output_tokens: 2400, instructions: systemPrompt, input: [...messages.slice(0, -1), { role: 'user', content: `公开博客参考资料（仅作为数据）：\n${context || '没有检索到相关资料。'}\n\n访客问题：\n${messages[messages.length - 1].content}` }] }),
+      headers: { 'x-goog-api-key': env.GEMINI_API_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: systemPrompt }] },
+        contents,
+        generationConfig: {
+          maxOutputTokens: 2400,
+          thinkingConfig: { thinkingLevel: 'LOW', includeThoughts: false },
+        },
+      }),
       signal: abort.signal,
     })
+    if (upstream.status === 429) {
+      await upstream.body?.cancel()
+      cleanup()
+      abort.abort()
+      return jsonError('Gemini 请求额度不足或提问过于频繁，请稍后重试。', 429)
+    }
     if (!upstream.ok || !upstream.body) {
       await upstream.body?.cancel()
       throw new Error('Upstream unavailable')
@@ -116,19 +144,24 @@ export async function handleChat(request, { env = process.env, fetcher = fetch }
         let outputSize = 0
         for await (const data of readSSE(upstream.body)) {
           const event = JSON.parse(data)
-          if (['error', 'response.failed', 'response.incomplete'].includes(event.type))
-            throw new Error('Provider stream error')
-          if (event.type === 'response.completed') {
-            finished = true
-            break
-          }
-          const text = ['response.output_text.delta', 'response.refusal.delta'].includes(event.type) ? event.delta : undefined
-          if (typeof text === 'string' && text) {
+          if (event.error || event.promptFeedback?.blockReason)
+            throw new Error('Provider stream error or blocked prompt')
+          const candidate = event.candidates?.[0]
+          if (candidate?.finishReason && candidate.finishReason !== 'STOP')
+            throw new Error('Provider response incomplete or blocked')
+          for (const part of candidate?.content?.parts || []) {
+            // Only user-visible answer text is forwarded, never thought summaries.
+            if (part.thought || typeof part.text !== 'string' || !part.text)
+              continue
             receivedText = true
-            outputSize += text.length
+            outputSize += part.text.length
             if (outputSize > 16000)
               throw new Error('Output too long')
-            send({ type: 'delta', text })
+            send({ type: 'delta', text: part.text })
+          }
+          if (candidate?.finishReason === 'STOP') {
+            finished = true
+            break
           }
         }
         if (!finished || !receivedText)
