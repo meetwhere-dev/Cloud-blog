@@ -15,7 +15,7 @@
     "test:unit": "vitest",
     "typecheck": "vue-tsc --noEmit",
     "test:chat": "node scripts/build-knowledge.mjs && node --test test/chat.test.mjs",
-    "dev:chat": "node --env-file=.env.local scripts/dev-chat.mjs"
+    "dev:chat": "node --watch --watch-path=.env.local --watch-path=server --watch-path=scripts/dev-chat.mjs --env-file=.env.local scripts/dev-chat.mjs"
   },
   "dependencies": {
     "@types/diacritics": "^1.3.1",

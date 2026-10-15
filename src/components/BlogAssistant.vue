@@ -16,6 +16,7 @@ const open = ref(false)
 const question = ref('')
 const busy = ref(false)
 const error = ref('')
+const progress = ref('正在查阅博客…')
 const messages = ref<Message[]>([])
 const input = ref<HTMLTextAreaElement>()
 const panel = ref<HTMLElement>()
@@ -41,9 +42,14 @@ watch(() => messages.value.map(message => message.content).join('') + busy.value
 })
 onBeforeUnmount(() => request?.abort())
 
-function citedSources(message: Message) {
+function visibleSources(message: Message) {
   const cited = new Set(Array.from(message.content.matchAll(/\[([1-9]\d*)\]/g), match => Number(match[1])))
-  return message.sources.map((source, index) => ({ ...source, number: index + 1 })).filter(source => cited.has(source.number))
+  return message.sources.map((source, index) => ({ ...source, number: index + 1 })).filter(source => message.state === 'error' || cited.has(source.number))
+}
+function safeSources(value: unknown): Source[] {
+  if (!Array.isArray(value))
+    return []
+  return value.filter((source: Source) => source && typeof source.title === 'string' && typeof source.path === 'string' && /^\/(?!\/)/.test(source.path) && !/[\\\s]/.test(source.path))
 }
 function stop() {
   request?.abort()
@@ -79,6 +85,7 @@ async function send(value = question.value, retry = false) {
   if (busy.value || !text || text.length > 2000)
     return
   error.value = ''
+  progress.value = '正在查阅博客…'
   if (retry) {
     const failed = messages.value[messages.value.length - 1]
     if (failed?.role === 'assistant' && failed.state !== 'complete')
@@ -105,6 +112,7 @@ async function send(value = question.value, retry = false) {
     })
     if (!response.ok) {
       const body = await response.json().catch(() => ({}))
+      answer.sources = safeSources(body.sources)
       throw new Error(body.error || '暂时无法连接问答助手，请稍后重试。')
     }
     if (!response.body || !response.headers.get('content-type')?.includes('text/event-stream'))
@@ -112,17 +120,18 @@ async function send(value = question.value, retry = false) {
     let completed = false
     for await (const data of readSSE(response.body)) {
       const event = JSON.parse(data)
-      if (event.type === 'sources')
-        answer.sources = event.sources.filter((source: Source) => typeof source.path === 'string' && /^\/(?!\/)/.test(source.path) && !/[\\\s]/.test(source.path))
+      if (event.type === 'sources') { answer.sources = safeSources(event.sources) }
 
-      else if (event.type === 'delta')
+      else if (event.type === 'delta') {
+        progress.value = '正在生成回答…'
         answer.content += event.text
+      }
 
-      else if (event.type === 'error')
-        throw new Error(event.message)
+      else if (event.type === 'status') { progress.value = event.message }
 
-      else if (event.type === 'done')
-        completed = true
+      else if (event.type === 'error') { throw new Error(event.message) }
+
+      else if (event.type === 'done') { completed = true }
     }
     if (!completed)
       throw new Error('回答中断，请重试。')
@@ -191,13 +200,13 @@ function retry() {
           <li v-for="message in messages" :key="message.id" class="assistant-message" :class="[message.role]">
             <span class="assistant-role">{{ message.role === 'user' ? '你' : '博客助手' }}</span>
             <div class="assistant-content">
-              {{ message.content || (message.state === 'loading' ? '正在查阅博客…' : '未生成回答') }}
+              {{ message.content || (message.state === 'loading' ? progress : message.state === 'error' ? (message.sources.length ? '暂时未能生成回答，可先阅读下面的相关文章。' : '暂时未能生成回答，请稍后重试。') : '已停止生成') }}
             </div>
-            <div v-if="citedSources(message).length" class="assistant-sources">
-              <span>参考原文</span>
-              <a v-for="source in citedSources(message)" :key="source.path" :href="source.path" target="_blank" rel="noopener noreferrer">[{{ source.number }}] {{ source.title }} <small v-if="source.date">{{ source.date }}</small> ↗</a>
+            <div v-if="visibleSources(message).length" class="assistant-sources">
+              <span>{{ message.state === 'error' ? '相关文章' : '参考原文' }}</span>
+              <a v-for="source in visibleSources(message)" :key="source.path" :href="source.path" target="_blank" rel="noopener noreferrer">[{{ source.number }}] {{ source.title }} <small v-if="source.date">{{ source.date }}</small> ↗</a>
             </div>
-            <small v-if="message.state === 'stopped' || message.state === 'error'" class="assistant-incomplete">{{ message.state === 'stopped' ? '已停止 · 回答可能不完整' : '生成失败 · 回答可能不完整' }}</small>
+            <small v-if="message.state === 'stopped' || message.state === 'error'" class="assistant-incomplete">{{ message.state === 'stopped' ? '已停止 · 回答可能不完整' : message.content ? '回答中断 · 内容可能不完整' : '可稍后重试' }}</small>
           </li>
         </ol>
       </div>
@@ -208,7 +217,7 @@ function retry() {
           </button>
         </template>
         <template v-else-if="busy">
-          正在生成回答…
+          {{ progress }}
         </template>
       </div>
       <form class="assistant-form" @submit.prevent="send()">

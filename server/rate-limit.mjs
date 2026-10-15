@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto'
 
 const buckets = new Map()
-export async function allowRequest(request, env, fetcher) {
+export async function allowRequest(request, env, fetcher, signal = request.signal) {
   // On Vercel, use its platform-provided client IP header, never a client session ID.
   const ip = request.headers.get('x-vercel-forwarded-for') || 'local'
   const identity = createHash('sha256').update(ip).digest('hex')
@@ -11,7 +11,7 @@ export async function allowRequest(request, env, fetcher) {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${env.UPSTASH_REDIS_REST_TOKEN}`, 'Content-Type': 'application/json' },
       body: JSON.stringify(['EVAL', 'local n=redis.call(\'INCR\',KEYS[1]); if n==1 then redis.call(\'EXPIRE\',KEYS[1],120) end; return n', '1', key]),
-      signal: AbortSignal.timeout(5000),
+      signal: AbortSignal.any([signal, AbortSignal.timeout(5000)]),
     })
     if (!response.ok)
       throw new Error('Rate limiter unavailable')

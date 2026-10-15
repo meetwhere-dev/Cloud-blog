@@ -30,7 +30,19 @@ export default defineConfig({
   },
 
   server: {
-    proxy: { '/api': 'http://127.0.0.1:3334' },
+    proxy: {
+      '/api': {
+        target: 'http://127.0.0.1:3334',
+        configure(proxy) {
+          proxy.on('proxyReq', (proxyRequest, _request, response) => {
+            response.once('close', () => {
+              if (!response.writableEnded)
+                proxyRequest.destroy()
+            })
+          })
+        },
+      },
+    },
   },
 
   plugins: [

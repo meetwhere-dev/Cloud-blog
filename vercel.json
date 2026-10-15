@@ -6,7 +6,8 @@
   "functions": {
     "api/chat.mjs": {
       "maxDuration": 60,
-      "includeFiles": "server/generated/knowledge.json"
+      "includeFiles": "server/generated/knowledge.json",
+      "supportsCancellation": true
     }
   },
   "cleanUrls": true
