@@ -49,7 +49,7 @@ function classifyError(status, payload, headers = new Headers()) {
 }
 
 export function failureMessage(cause, signal, partial = false, hasSources = true) {
-  const hint = hasSources ? '或先阅读下方文章' : ''
+  const hint = hasSources ? '或先阅读下方资料' : ''
   if (signal.aborted && signal.reason?.name === 'TimeoutError')
     return partial ? `回答超时，已保留生成内容。请重新生成${hint}。` : `等待回答超时，请稍后重试${hint}。`
   if (partial)

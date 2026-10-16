@@ -9,31 +9,32 @@ export function tokenize(text) {
   return [...new Set([...english, ...chinese.flatMap(word => word.length === 1 ? [word] : Array.from({ length: word.length - 1 }, (_, i) => word.slice(i, i + 2)))])]
 }
 
-export function retrieve(question, currentPath = '', history = []) {
+export function retrieve(question, _currentPath = '', history = [], documents = knowledge) {
   const terms = tokenize(question)
   const previous = tokenize(history.filter(m => m.role === 'user').slice(-2).map(m => m.content).join(' '))
-  const refersToPage = /这篇|这里|当前|本文|文中|这段|this (page|post|article)|\bhere\b/i.test(question)
-  const scored = knowledge.map((chunk) => {
-    const title = chunk.title.toLowerCase()
+  const broad = /招聘|适合|匹配|岗位|介绍|优势|JD|job|hire|fit/i.test(question)
+  const scored = documents.map((chunk) => {
+    const title = `${chunk.title} ${(chunk.skills || []).join(' ')}`.toLowerCase()
     const body = chunk.text.toLowerCase()
     const scoreTerms = tokens => tokens.reduce((score, term) => score + (title.includes(term) ? 5 : 0) + (body.includes(term) ? 1 : 0), 0)
-    const score = scoreTerms(terms)
-    // Page/history hints help follow-up questions without replacing the current question.
-    const hint = (refersToPage && chunk.path === currentPath ? 4 : 0) + scoreTerms(previous) * 0.2
-    return { ...chunk, score: score + hint }
-  }).filter(chunk => chunk.score > 0).sort((a, b) => b.score - a.score)
+    const score = scoreTerms(terms) + scoreTerms(previous) * 0.2 + (broad && ['project', 'experience', 'achievement', 'resume'].includes(chunk.type) ? 2 : 0)
+    return { ...chunk, score }
+  }).sort((a, b) => b.score - a.score)
   const selected = []
-  const perPage = new Map()
-  const threshold = Math.max(1, (scored[0]?.score || 0) * 0.3)
-  for (const chunk of scored) {
-    if (chunk.score < threshold)
-      continue
-    if ((perPage.get(chunk.path) || 0) >= 2)
+  const counts = new Map()
+  let length = 0
+  // Always include the published resume, bounded to keep model context predictable.
+  const ordered = [...scored.filter(chunk => chunk.type === 'resume'), ...scored.filter(chunk => chunk.type !== 'resume' && chunk.score > 0)]
+  for (const chunk of ordered) {
+    if ((counts.get(chunk.id) || 0) >= 2 || length + chunk.text.length > 12000)
       continue
     selected.push(chunk)
-    perPage.set(chunk.path, (perPage.get(chunk.path) || 0) + 1)
-    if (selected.length === 5)
+    counts.set(chunk.id, (counts.get(chunk.id) || 0) + 1)
+    length += chunk.text.length
+    if (selected.length === 8)
       break
   }
   return selected
 }
+
+export { knowledge }

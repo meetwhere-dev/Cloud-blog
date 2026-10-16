@@ -14,7 +14,7 @@
     "test:e2e": "cypress open",
     "test:unit": "vitest",
     "typecheck": "vue-tsc --noEmit",
-    "test:chat": "node scripts/build-knowledge.mjs && node --test test/chat.test.mjs",
+    "test:chat": "node scripts/build-knowledge.mjs && node --test test/chat.test.mjs test/profile.test.mjs",
     "dev:chat": "node --watch --watch-path=.env.local --watch-path=server --watch-path=scripts/dev-chat.mjs --env-file=.env.local scripts/dev-chat.mjs"
   },
   "dependencies": {

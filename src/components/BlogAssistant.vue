@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { nextTick, onBeforeUnmount, ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { MAX_MESSAGE, chatPayload, safePublicUrl } from '../../server/profile-contract.mjs'
 import { readSSE } from '../../server/sse.mjs'
 
-interface Source { title: string; path: string; date?: string }
+interface Source { id: string; title: string; excerpt: string; links: { label: string; url: string }[] }
 interface Message {
   id: number
   role: 'user' | 'assistant'
@@ -11,18 +11,18 @@ interface Message {
   sources: Source[]
   state: 'complete' | 'loading' | 'error' | 'stopped'
 }
-const route = useRoute()
+const contact = ref('')
 const open = ref(false)
 const question = ref('')
 const busy = ref(false)
 const error = ref('')
-const progress = ref('正在查阅博客…')
+const progress = ref('正在查阅个人资料…')
 const messages = ref<Message[]>([])
 const input = ref<HTMLTextAreaElement>()
 const panel = ref<HTMLElement>()
 const launcher = ref<HTMLButtonElement>()
 const transcript = ref<HTMLElement>()
-const suggestions = ['介绍一下博客作者', '有哪些关于 Vue 和 Nuxt 的文章？', 'Vite 如何引入静态资源？']
+const suggestions = ['你最近在忙什么项目？', '你做的 AI 客服能帮用户做些什么？', '从前端到全栈，你的经历是怎样的？']
 let request: AbortController | undefined
 let nextId = 0
 
@@ -49,7 +49,8 @@ function visibleSources(message: Message) {
 function safeSources(value: unknown): Source[] {
   if (!Array.isArray(value))
     return []
-  return value.filter((source: Source) => source && typeof source.title === 'string' && typeof source.path === 'string' && /^\/(?!\/)/.test(source.path) && !/[\\\s]/.test(source.path))
+  return value.filter((source: Source) => source && typeof source.id === 'string' && typeof source.title === 'string' && typeof source.excerpt === 'string')
+    .map((source: Source) => ({ ...source, links: (Array.isArray(source.links) ? source.links : []).filter(link => link && typeof link.label === 'string' && safePublicUrl(link.url)) }))
 }
 function stop() {
   request?.abort()
@@ -68,7 +69,7 @@ function keyboard(event: KeyboardEvent) {
   }
   if (event.key !== 'Tab')
     return
-  const elements = Array.from(panel.value?.querySelectorAll<HTMLElement>('button:not(:disabled), a[href], textarea:not(:disabled)') || [])
+  const elements = Array.from(panel.value?.querySelectorAll<HTMLElement>('button:not(:disabled), a[href], summary, textarea:not(:disabled)') || []).filter(element => element.getClientRects().length > 0)
   const first = elements[0]
   const last = elements[elements.length - 1]
   if (event.shiftKey && document.activeElement === first) {
@@ -82,10 +83,14 @@ function keyboard(event: KeyboardEvent) {
 }
 async function send(value = question.value, retry = false) {
   const text = value.trim()
-  if (busy.value || !text || text.length > 2000)
+  if (busy.value || !text)
     return
+  if (text.length > MAX_MESSAGE) {
+    error.value = '问题或职位描述最多 8,000 字，请缩短后再发送。'
+    return
+  }
   error.value = ''
-  progress.value = '正在查阅博客…'
+  progress.value = '正在查阅个人资料…'
   if (retry) {
     const failed = messages.value[messages.value.length - 1]
     if (failed?.role === 'assistant' && failed.state !== 'complete')
@@ -96,9 +101,9 @@ async function send(value = question.value, retry = false) {
   }
   question.value = ''
   // Only successful exchanges go back to the model, within the server's context budget.
-  const history = messages.value.slice(0, -1).filter(message => message.state === 'complete').slice(-8)
-    .map(({ role, content }) => ({ role, content: content.slice(0, 900) }))
-  const payload = [...history, { role: 'user', content: text }]
+  const history = messages.value.slice(0, -1).filter(message => message.state === 'complete')
+    .map(({ role, content }) => ({ role, content }))
+  const payload = chatPayload(history, text)
   messages.value.push({ id: ++nextId, role: 'assistant', content: '', sources: [], state: 'loading' })
   const answer = messages.value[messages.value.length - 1]
   busy.value = true
@@ -107,7 +112,7 @@ async function send(value = question.value, retry = false) {
     const response = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ messages: payload, currentPath: route.path }),
+      body: JSON.stringify({ messages: payload }),
       signal: request.signal,
     })
     if (!response.ok) {
@@ -120,7 +125,10 @@ async function send(value = question.value, retry = false) {
     let completed = false
     for await (const data of readSSE(response.body)) {
       const event = JSON.parse(data)
-      if (event.type === 'sources') { answer.sources = safeSources(event.sources) }
+      if (event.type === 'sources') {
+        answer.sources = safeSources(event.sources)
+        contact.value = safePublicUrl(event.contact, true)
+      }
 
       else if (event.type === 'delta') {
         progress.value = '正在生成回答…'
@@ -164,16 +172,16 @@ function retry() {
 <template>
   <div class="blog-assistant">
     <button v-if="!open" ref="launcher" class="assistant-launcher" aria-haspopup="dialog" aria-controls="blog-assistant-panel" :aria-expanded="open" @click="open = true">
-      <span aria-hidden="true">✦</span> 博客问答
+      <span aria-hidden="true">✦</span> 个人简历 AI
     </button>
     <section v-if="open" id="blog-assistant-panel" ref="panel" class="assistant-panel" role="dialog" aria-modal="true" aria-labelledby="assistant-title" @keydown="keyboard">
       <header class="assistant-header">
         <div>
           <div class="assistant-eyebrow">
-            CLOUD’S BLOG
+            CAREER · AI AGENT · FRONTEND · FULL STACK
           </div>
           <h2 id="assistant-title">
-            博客问答助手 <span aria-hidden="true">✦</span>
+            个人简历 AI <span aria-hidden="true">✦</span>
           </h2>
         </div>
         <div class="assistant-actions">
@@ -191,20 +199,26 @@ function retry() {
             ✦
           </div>
           <h3>从一个问题开始</h3>
-          <p>想了解作者，或找一篇技术文章？<br>我会从这个博客的公开内容中寻找答案。</p>
+          <p>了解他的经历、项目和成果，或粘贴职位描述。<br>我会依据公开个人资料说明匹配证据和经验缺口。</p>
           <button v-for="suggestion in suggestions" :key="suggestion" class="assistant-suggestion" @click="send(suggestion)">
             {{ suggestion }} <span aria-hidden="true">↗</span>
           </button>
         </div>
         <ol v-else class="assistant-messages" aria-label="对话记录">
           <li v-for="message in messages" :key="message.id" class="assistant-message" :class="[message.role]">
-            <span class="assistant-role">{{ message.role === 'user' ? '你' : '博客助手' }}</span>
+            <span class="assistant-role">{{ message.role === 'user' ? '你' : '简历助手' }}</span>
             <div class="assistant-content">
-              {{ message.content || (message.state === 'loading' ? progress : message.state === 'error' ? (message.sources.length ? '暂时未能生成回答，可先阅读下面的相关文章。' : '暂时未能生成回答，请稍后重试。') : '已停止生成') }}
+              {{ message.content || (message.state === 'loading' ? progress : message.state === 'error' ? (message.sources.length ? '暂时未能生成回答，可先阅读下面的相关资料。' : '暂时未能生成回答，请稍后重试。') : '已停止生成') }}
             </div>
             <div v-if="visibleSources(message).length" class="assistant-sources">
-              <span>{{ message.state === 'error' ? '相关文章' : '参考原文' }}</span>
-              <a v-for="source in visibleSources(message)" :key="source.path" :href="source.path" target="_blank" rel="noopener noreferrer">[{{ source.number }}] {{ source.title }} <small v-if="source.date">{{ source.date }}</small> ↗</a>
+              <span>{{ message.state === 'error' ? '相关资料' : '参考证据' }}</span>
+              <details v-for="source in visibleSources(message)" :key="source.id">
+                <summary>[{{ source.number }}] {{ source.title }}</summary>
+                <p class="assistant-evidence">
+                  {{ source.excerpt }}
+                </p>
+                <a v-for="link in source.links" :key="link.url" :href="link.url" target="_blank" rel="noopener noreferrer">{{ link.label }} ↗</a>
+              </details>
             </div>
             <small v-if="message.state === 'stopped' || message.state === 'error'" class="assistant-incomplete">{{ message.state === 'stopped' ? '已停止 · 回答可能不完整' : message.content ? '回答中断 · 内容可能不完整' : '可稍后重试' }}</small>
           </li>
@@ -220,9 +234,10 @@ function retry() {
           {{ progress }}
         </template>
       </div>
+      <a v-if="contact" class="assistant-contact" :href="contact" target="_blank" rel="noopener noreferrer">联系我安排面试 ↗</a>
       <form class="assistant-form" @submit.prevent="send()">
-        <label class="sr-only" for="assistant-question">输入博客相关问题</label>
-        <textarea id="assistant-question" ref="input" v-model="question" rows="2" maxlength="2000" :disabled="busy" placeholder="问问博客里的内容…" @keydown.enter.exact="!$event.isComposing && ($event.preventDefault(), send())" />
+        <label class="sr-only" for="assistant-question">输入招聘相关问题或职位描述</label>
+        <textarea id="assistant-question" ref="input" v-model="question" rows="2" :disabled="busy" placeholder="询问项目经验，或粘贴职位描述（最多 8,000 字）…" @keydown.enter.exact="!$event.isComposing && ($event.preventDefault(), send())" />
         <button v-if="busy" type="button" class="assistant-send" @click="stop">
           停止
         </button>
@@ -231,7 +246,7 @@ function retry() {
         </button>
       </form>
       <p class="assistant-disclaimer">
-        AI 回答仅供参考，请以原文为准。问题将发送给模型服务，请勿输入敏感信息。
+        AI 回答仅供参考，请以公开资料及面试核实为准。问题将发送给模型服务，请勿输入敏感信息。
       </p>
     </section>
   </div>
@@ -242,7 +257,7 @@ function retry() {
 :global(html.dark) .blog-assistant { --chat-bg: #17211f; --chat-soft: #202e2a; --chat-text: #e1ece7; --chat-muted: #9eafa7; --chat-line: #34463e; --chat-accent: #5ed3bc; }
 button { cursor: pointer; font: inherit; }
 button:disabled { cursor: default; opacity: .45; }
-button:focus-visible, a:focus-visible, textarea:focus-visible { outline: 2px solid var(--chat-accent); outline-offset: 3px; }
+button:focus-visible, a:focus-visible, summary:focus-visible, textarea:focus-visible { outline: 2px solid var(--chat-accent); outline-offset: 3px; }
 .assistant-launcher { background: var(--chat-accent); color: var(--chat-bg); border-radius: 30px; padding: 13px 20px; box-shadow: 0 6px 24px #0002; font-weight: 600; }
 .assistant-launcher span { margin-right: 8px; }
 .assistant-panel { width: 400px; height: min(680px, calc(100dvh - 48px)); max-height: calc(100vh - 48px); display: flex; flex-direction: column; border: 1px solid var(--chat-line); border-radius: 20px; background: var(--chat-bg); box-shadow: 0 16px 70px #0003; overflow: hidden; }
@@ -269,6 +284,9 @@ h3 { font-size: 22px; font-weight: 600; margin: 12px 0 8px; }
 .assistant-sources > span { color: var(--chat-muted); font-size: 11px; }
 .assistant-sources a { display: block; color: var(--chat-accent); margin-top: 5px; text-decoration: none; overflow-wrap: anywhere; }
 .assistant-sources a:hover { text-decoration: underline; }
+.assistant-evidence { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 220px; overflow-y: auto; }
+.assistant-sources summary { cursor: pointer; margin-top: 8px; }
+.assistant-contact { margin: 0 20px 10px; color: var(--chat-accent); }
 .assistant-sources small { color: var(--chat-muted); }
 .assistant-status { color: var(--chat-muted); font-size: 12px; padding: 0 20px 8px; min-height: 27px; }
 .assistant-status button { color: var(--chat-accent); text-decoration: underline; margin-left: 6px; }
