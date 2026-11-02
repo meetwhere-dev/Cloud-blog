@@ -62,7 +62,7 @@ status: published
 
 ## 项目经历
 
-### CRM 达人管理系统
+### [CRM 达人管理系统](https://crm.femometer.com/)
 
 **开发 · 2026.01–至今**
 
@@ -71,7 +71,7 @@ status: published
 - 前端采用 React、Tailwind CSS；后端采用 Node.js、Express，数据库使用 PostgreSQL。
 - 集成飞书 API 与 SMTP 邮件通知，使用 Docker、Nginx 部署。
 
-### Femometer 外贸独立站与 AI 客服
+### [Femometer 外贸独立站与 AI 客服](https://www.femometer.com/)
 
 **前端开发 · 2022.08–至今**
 
@@ -80,6 +80,8 @@ status: published
 - 使用 Nuxt.js 与 SSR，接入多平台埋点，支持多语言与 SEO 优化。
 - AI 客服以 Node.js、Mastra 为主要框架，通过知识图谱检索相关资料，使用工作流处理退换货等售后流程。
 - 支持在对话中处理售前、售后问题，连接网站商品和业务服务。
+
+[体验 AI 客服](https://www.femometer.com/?openAgent=true)
 
 ### PatternGo 在线服装打版系统
 
@@ -91,19 +93,19 @@ status: published
 - 与服装设计师沟通需求、交互效果及实现成本，以面向对象方式抽象父类并扩展具体物件。
 - 独立设计系统一半以上的物件，参与问题排查与 UI 组件库建设。
 
-### Blog 个人网站
+### [Blog 个人网站](/)
 
 **前端开发 · 2020.07–至今**
 
 使用 Vite、Vue 3、UnoCSS 与 vite-ssg 搭建个人博客，通过 Composition API 组织逻辑、拆分代码，使用静态站点生成提供预渲染页面。
 
-### 矢量绘图应用
+### [矢量绘图应用](/illustrator-demo/index.html)
 
 **前端开发 · 2020.07**
 
 使用 Canvas / Fabric.js 实现直线、Bézier 曲线绘制，坐标与长度显示，以及拖动、删除等交互。
 
-### 2048 小游戏
+### [2048 小游戏](/2048/index.html)
 
 **前端开发 · 2020.05**
 

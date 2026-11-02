@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import MarkdownIt from 'markdown-it'
+import LinkAttributes from 'markdown-it-link-attributes'
 import resumeSource from '../../knowledge/profile/resume.md?raw'
 import resumeEnglish from '../content/resume.en.md?raw'
 
@@ -11,7 +12,10 @@ useHead({
   meta: [{ name: 'description', content: computed(() => t('resume.description')) }],
 })
 
-const markdown = new MarkdownIt({ html: false, linkify: false })
+const markdown = new MarkdownIt({ html: false, linkify: false }).use(LinkAttributes, {
+  matcher: (href: string) => /^https?:\/\//.test(href) || href.startsWith('/'),
+  attrs: { target: '_blank', rel: 'noopener noreferrer' },
+})
 const source = computed(() => (isEnglish.value ? resumeEnglish : resumeSource).replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/, ''))
 const sections = computed(() => source.value.split(/^## /m).slice(1).map((section, index) => {
   const newline = section.indexOf('\n')
@@ -77,12 +81,12 @@ function printResume() {
 </template>
 
 <style scoped>
-.resume-page { --resume-ink: #253c38; --resume-muted: #687b74; --resume-line: #dce5df; --resume-accent: #237461; max-width: 1060px; margin: 0 auto; color: var(--resume-ink); text-align: left; }
+.resume-page { --resume-ink: #253c38; --resume-muted: #687b74; --resume-line: #dce5df; --resume-accent: #237461; --resume-on-accent: #fff; max-width: 1060px; margin: 0 auto; color: var(--resume-ink); text-align: left; }
 .resume-hero { padding: 42px 48px 28px; border: 1px solid var(--resume-line); background: #f0f5ef; border-radius: 6px; }
 .resume-topline { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
 .resume-language { display: flex; gap: 3px; border: 1px solid var(--resume-line); padding: 3px; border-radius: 5px; }
 .resume-language button { font-size: 11px; padding: 5px 10px; border-radius: 3px; cursor: pointer; color: var(--resume-muted); }
-.resume-language button[aria-pressed="true"] { background: var(--resume-accent); color: #fff; }
+.resume-language button[aria-pressed="true"] { background: var(--resume-accent); color: var(--resume-on-accent); }
 .resume-page[lang="en"] .resume-intro h1 { font-size: clamp(32px, 4vw, 48px); letter-spacing: 0; }
 .resume-page[lang="en"] .resume-copy { line-height: 1.8; }
 .resume-eyebrow { font-size: 10px; font-weight: 600; letter-spacing: 2px; color: var(--resume-muted); }
@@ -97,7 +101,7 @@ function printResume() {
 .resume-hero-bottom p span { margin: 0 10px; opacity: .5; }
 .resume-actions { display: flex; gap: 10px; }
 .resume-actions a, .resume-actions button { border: 1px solid var(--resume-line); padding: 9px 16px; border-radius: 4px; cursor: pointer; }
-.resume-actions a { background: var(--resume-accent); color: white; border-color: var(--resume-accent); }
+.resume-actions a { background: var(--resume-accent); color: var(--resume-on-accent); border-color: var(--resume-accent); }
 .resume-actions a span { padding-left: 15px; }
 .resume-layout { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 58px; padding: 54px 16px 0; }
 .resume-sidebar-inner { position: sticky; top: 28px; }
@@ -126,10 +130,9 @@ function printResume() {
 .resume-page a:hover, .resume-page button:hover { opacity: .75; }
 .resume-page a:focus-visible, .resume-page button:focus-visible { outline: 2px solid var(--resume-accent); outline-offset: 5px; }
 .resume-end { display: flex; justify-content: space-between; gap: 20px; font-size: 12px; color: var(--resume-muted); padding: 0 16px 20px; }
-:global(.dark) .resume-page { --resume-ink: #dce6df; --resume-muted: #9bab9f; --resume-line: #35443b; --resume-accent: #7ec4a8; }
-:global(.dark) .resume-hero { background: #1d2923; }
-:global(.dark) .resume-monogram { color: #587768; }
-:global(.dark) .resume-actions a { color: #16251e; }
+.dark .resume-page { --resume-ink: #dce6df; --resume-muted: #9bab9f; --resume-line: #35443b; --resume-accent: #7ec4a8; --resume-on-accent: #16251e; }
+.dark .resume-hero { background: #1d2923; }
+.dark .resume-monogram { color: #587768; }
 @media (max-width: 760px) {
   .resume-hero { padding: 28px 24px 22px; }
   .resume-intro h1 { font-size: 40px; }

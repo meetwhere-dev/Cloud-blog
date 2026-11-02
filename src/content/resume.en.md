@@ -47,7 +47,7 @@ Operated a Taobao store selling anime merchandise.
 
 ## Projects
 
-### Creator Relationship Management System
+### [Creator Relationship Management System](https://crm.femometer.com/)
 
 **Developer · Jan 2026–Present**
 
@@ -56,7 +56,7 @@ Centralized creator onboarding, bulk email, automated contract generation, inven
 - Built the frontend with React and Tailwind CSS, and the backend with Node.js, Express, and PostgreSQL.
 - Integrated Feishu API and SMTP notifications; deployed with Docker and Nginx.
 
-### Femometer E-commerce Website & AI Customer Support
+### [Femometer E-commerce Website & AI Customer Support](https://www.femometer.com/)
 
 **Frontend Developer · Aug 2022–Present**
 
@@ -65,6 +65,8 @@ Provided product discovery and purchase journeys for international customers, su
 - Used Nuxt.js and SSR, integrated analytics platforms, and supported localization and SEO improvements.
 - Built AI customer support around Node.js and Mastra, using a knowledge graph to retrieve relevant information and workflows to handle returns, exchanges, and other after-sales processes.
 - Connected conversations with product and business services to support pre-sales and after-sales requests.
+
+[Try AI customer support](https://www.femometer.com/?openAgent=true)
 
 ### PatternGo Online Garment Pattern Design
 
@@ -76,19 +78,19 @@ Helped garment designers and pattern makers produce patterns more efficiently. B
 - Worked with garment designers to clarify requirements, interaction behavior, and implementation costs; modeled shared properties with base classes and extended them for individual objects.
 - Independently designed more than half of the system's garment objects, and contributed to debugging and the UI component library.
 
-### Personal Blog
+### [Personal Blog](/)
 
 **Frontend Developer · Jul 2020–Present**
 
 Built a personal blog with Vite, Vue 3, UnoCSS, and vite-ssg. Used the Composition API to organize and separate logic, and static site generation to deliver prerendered pages.
 
-### Vector Drawing Application
+### [Vector Drawing Application](/illustrator-demo/index.html)
 
 **Frontend Developer · Jul 2020**
 
 Used Canvas / Fabric.js to implement line and Bézier curve drawing, coordinate and length displays, and drag and delete interactions.
 
-### 2048 Game
+### [2048 Game](/2048/index.html)
 
 **Frontend Developer · May 2020**
 
