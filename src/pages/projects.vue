@@ -7,6 +7,13 @@ const { t } = useI18n()
 
 const projects = [
   {
+    name: '2048 · Three.js',
+    link: '/games/2048-three',
+    desc: '用 AI 重做第一个小游戏：立体积木、合并特效与结算动画',
+    date: '2026-11-02T08:00:00.000+00:00',
+    icon: 'i-arcticons-a2048',
+  },
+  {
     name: 'Somind App Website',
     link: 'https://www.somind.ai/',
     desc: 'Astro, SSG, I18n, S3, Cloudflare',
