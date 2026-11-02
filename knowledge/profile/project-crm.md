@@ -15,7 +15,7 @@ status: published
 
 面向海外品牌的达人合作管理场景，将原本分散在表格、邮件和不同业务工具中的合作信息集中管理，让团队与达人在统一流程中协作。
 
-时间：2026 年 3 月至今。
+时间：2026 年 1 月至今。
 
 ## 本人职责
 
@@ -23,7 +23,7 @@ status: published
 
 ## 技术方案与业务范围
 
-使用 React、TypeScript、Node.js 和 PostgreSQL 搭建系统，并对接原有业务工具。
+使用 React、TypeScript、Tailwind CSS、Node.js、Express 和 PostgreSQL 搭建系统，并对接原有业务工具。通过飞书 API 与 SMTP 发送外部通知，使用 Docker、Nginx 部署。
 
 管理流程覆盖达人建档、筛选与批量操作、合同签署与审批、寄样换货、物流同步、内容审核、自动催稿及季度结算。达人可通过自助端提交资料、查看进度。
 

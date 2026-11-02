@@ -7,7 +7,7 @@ import { readSSE } from '../server/sse.mjs'
 
 const documents = [{ id: 'agent-project', title: 'Agent 项目', type: 'project', skills: ['Agent', 'RAG'], text: '本人负责 Agent 工具调用与 RAG 检索，团队共同交付。', links: [] }]
 const handleChat = (request, options = {}) => realHandleChat(request, { documents, ...options })
-const env = { GEMINI_API_KEY: 'test-key', VERCEL_ENV: 'preview' }
+const env = { DEEPSEEK_API_KEY: 'test-key', VERCEL_ENV: 'preview' }
 let ip = 0
 function request(messages = [{ role: 'user', content: 'Agent 项目经验？' }], options = {}) {
   return new Request('https://blog.example/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-vercel-forwarded-for': `test-${++ip}` }, body: JSON.stringify({ messages }), ...options })
@@ -32,8 +32,8 @@ async function events(response) {
     result.push(JSON.parse(data))
   return result
 }
-const delta = text => ({ candidates: [{ content: { role: 'model', parts: [{ text }] } }] })
-const completed = { candidates: [{ finishReason: 'STOP' }] }
+const delta = text => ({ choices: [{ delta: { content: text } }] })
+const completed = { choices: [{ finish_reason: 'stop' }] }
 
 test('retrieves profile evidence and follow-ups without page hints', () => {
   assert.equal(retrieve('Agent RAG', '', [], documents)[0].id, 'agent-project')
@@ -49,8 +49,8 @@ test('streams split UTF-8 deltas and server-owned profile evidence', async () =>
   const response = await handleChat(request(), {
     env,
     fetcher: async (url, options) => {
-      assert.equal(url.href, 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:streamGenerateContent?alt=sse')
-      assert.equal(options.headers['x-goog-api-key'], 'test-key')
+      assert.equal(url.href, 'https://api.deepseek.com/chat/completions')
+      assert.equal(options.headers.Authorization, 'Bearer test-key')
       assert.ok(!url.href.includes('test-key'))
       sent = JSON.parse(options.body)
       return provider([delta('根据资料'), delta('，他负责工具调用。[1]'), completed])
@@ -63,11 +63,13 @@ test('streams split UTF-8 deltas and server-owned profile evidence', async () =>
   assert.equal(output[0].sources[0].id, 'agent-project')
   assert.equal(output.filter(event => event.type === 'delta').map(event => event.text).join(''), '根据资料，他负责工具调用。[1]')
   assert.equal(output.at(-1).type, 'done')
-  assert.equal(sent.generationConfig.thinkingConfig.thinkingLevel, 'LOW')
-  assert.equal(sent.generationConfig.thinkingConfig.includeThoughts, false)
-  assert.match(sent.systemInstruction.parts[0].text, /只依据本次提供/)
-  assert.match(sent.contents.at(-1).parts[0].text, /Agent 项目/)
-  assert.match(sent.contents.at(-1).parts[0].text, /技能与领域标签：Agent、RAG/)
+  assert.equal(sent.model, 'deepseek-flash')
+  assert.equal(sent.thinking.type, 'disabled')
+  assert.equal(sent.stream, true)
+  assert.equal(sent.max_tokens, 2400)
+  assert.match(sent.messages[0].content, /只依据本次提供/)
+  assert.match(sent.messages.at(-1).content, /Agent 项目/)
+  assert.match(sent.messages.at(-1).content, /技能与领域标签：Agent、RAG/)
 })
 
 test('rejects invalid roles, oversized bodies, cross-origin requests and wrong methods before model calls', async () => {
@@ -88,7 +90,7 @@ test('missing credentials fail clearly and upstream errors never leak secrets', 
 })
 
 test('truncated and failed provider streams emit error, never done', async () => {
-  for (const tail of [[], [{ candidates: [{ finishReason: 'MAX_TOKENS' }] }], [{ candidates: [{ finishReason: 'SAFETY' }] }], [{ error: { message: 'failure' } }], [{ promptFeedback: { blockReason: 'SAFETY' } }]]) {
+  for (const tail of [[], [{ choices: [{ finish_reason: 'length' }] }], [{ choices: [{ finish_reason: 'content_filter' }] }], [{ error: { message: 'failure' } }], [{ choices: [{ finish_reason: 'content_filter' }] }]]) {
     const response = await handleChat(request(), { env, fetcher: async () => provider([delta('部分回答'), ...tail]) })
     const output = await events(response)
     assert.equal(output.at(-1).type, 'error')
@@ -127,7 +129,7 @@ test('shared production limiter blocks excess traffic and fails closed without R
   assert.equal((await handleChat(request(), { env: production, fetcher: async () => new Response('{"result":11}') })).status, 429)
 })
 
-test('Gemini history uses alternating user/model roles and handles a trimmed exchange', async () => {
+test('DeepSeek history preserves user/assistant roles and handles a trimmed exchange', async () => {
   const response = await handleChat(request([
     { role: 'assistant', content: 'trimmed previous answer' },
     { role: 'user', content: 'Nuxt i18n' },
@@ -138,22 +140,22 @@ test('Gemini history uses alternating user/model roles and handles a trimmed exc
     env,
     fetcher: async (_, options) => {
       const body = JSON.parse(options.body)
-      assert.deepEqual(body.contents.map(message => message.role), ['user', 'model', 'user'])
-      assert.equal(body.contents[0].parts.length, 2)
-      assert.equal(body.contents[1].parts[0].text, '上次回答')
-      assert.match(body.contents[2].parts[0].text, /那第三个问题/)
+      assert.deepEqual(body.messages.map(message => message.role), ['system', 'assistant', 'user', 'user', 'assistant', 'user'])
+      assert.equal(body.messages[3].content, '补充问题')
+      assert.equal(body.messages[4].content, '上次回答')
+      assert.match(body.messages[5].content, /那第三个问题/)
       return provider([delta('回答'), completed])
     },
   })
   assert.equal((await events(response)).at(-1).type, 'done')
 })
 
-test('Gemini thought parts stay private and text in the STOP frame is preserved', async () => {
+test('DeepSeek reasoning stays private and text in the stop frame is preserved', async () => {
   const response = await handleChat(request(), {
     env,
     fetcher: async () => provider([
-      { candidates: [{ content: { parts: [{ text: 'private reasoning', thought: true }, { text: '正文' }] } }] },
-      { candidates: [{ content: { parts: [{ text: '结尾。[1]' }] }, finishReason: 'STOP' }] },
+      { choices: [{ delta: { reasoning_content: 'private reasoning', content: '正文' } }] },
+      { choices: [{ delta: { content: '结尾。[1]' }, finish_reason: 'stop' }] },
     ]),
   })
   const output = await events(response)
@@ -161,13 +163,13 @@ test('Gemini thought parts stay private and text in the STOP frame is preserved'
   assert.equal(output.at(-1).type, 'done')
 })
 
-test('Gemini quota exhaustion returns a safe error without retries or fallback', async () => {
+test('DeepSeek quota exhaustion returns a safe error without retries or fallback', async () => {
   let calls = 0
   const response = await handleChat(request(), {
     env,
     fetcher: async () => {
       calls++
-      return new Response('test-key private quota details', { status: 429 })
+      return new Response('test-key private quota details', { status: 402 })
     },
   })
   const output = await events(response)
@@ -182,12 +184,12 @@ test('high demand exhausts only three primary attempts and one fallback, retaini
   const delays = []
   const paths = []
   const response = await handleChat(request(), {
-    env,
+    env: { ...env, DEEPSEEK_FALLBACK_MODEL: 'deepseek-v4-pro' },
     random: () => 0,
     sleep: async (ms) => { delays.push(ms) },
-    fetcher: async (url) => {
+    fetcher: async (url, options) => {
       calls++
-      paths.push(url.pathname)
+      paths.push(JSON.parse(options.body).model)
       return new Response('test-key private high-demand details', { status: 503 })
     },
   })
@@ -199,8 +201,8 @@ test('high demand exhausts only three primary attempts and one fallback, retaini
   assert.doesNotMatch(JSON.stringify(output), /test-key|private/)
   assert.equal(calls, 4)
   assert.deepEqual(delays, [1000, 2000])
-  assert.ok(paths.slice(0, 3).every(path => path.includes('gemini-3.5-flash-lite')))
-  assert.match(paths[3], /gemini-3.1-flash-lite/)
+  assert.ok(paths.slice(0, 3).every(path => path.includes('deepseek-flash')))
+  assert.match(paths[3], /deepseek-v4-pro/)
 })
 
 test('503 retry can recover without duplicating text or calling fallback', async () => {
@@ -220,7 +222,7 @@ test('503 retry can recover without duplicating text or calling fallback', async
 test('fallback succeeds after primary retries and never combines multiple answers', async () => {
   let calls = 0
   const response = await handleChat(request(), {
-    env,
+    env: { ...env, DEEPSEEK_FALLBACK_MODEL: 'deepseek-v4-pro' },
     sleep: async () => {},
     fetcher: async () => ++calls <= 3 ? new Response('{}', { status: 503 }) : provider([delta('备用回答。[1]'), completed]),
   })
@@ -242,18 +244,18 @@ test('partial stream interruption is never retried or mixed with a fallback', as
   assert.match(output.at(-1).message, /已保留生成内容/)
 })
 
-test('daily quota exhaustion is not retried even if RetryInfo is present', async () => {
+test('insufficient balance is not retried even if Retry-After is present', async () => {
   let calls = 0
   const response = await handleChat(request(), {
     env,
     fetcher: async () => {
       calls++
-      return new Response(JSON.stringify({ error: { message: 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', details: [{ '@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '1s' }] } }), { status: 429 })
+      return new Response(JSON.stringify({ error: { message: 'Insufficient Balance' } }), { status: 402, headers: { 'Retry-After': '1' } })
     },
   })
   const output = await events(response)
   assert.equal(calls, 1)
-  assert.match(output.at(-1).message, /配额恢复/)
+  assert.match(output.at(-1).message, /模型调用额度不足/)
 })
 
 test('short-term rate limiting respects Retry-After before recovering', async () => {
@@ -291,7 +293,7 @@ test('configuration and safety failures are not retried', async () => {
     assert.equal(calls, 1)
   }
   let calls = 0
-  const response = await handleChat(request(), { env, fetcher: async () => { calls++; return provider([{ promptFeedback: { blockReason: 'SAFETY' } }]) } })
+  const response = await handleChat(request(), { env, fetcher: async () => { calls++; return provider([{ choices: [{ finish_reason: 'content_filter' }] }]) } })
   assert.equal((await events(response)).at(-1).type, 'error')
   assert.equal(calls, 1)
 })
@@ -353,10 +355,10 @@ test('deadline aborts a stalled upstream request and emits a timeout with source
 })
 
 test('duplicate backup model is not called again and blank disables backup', async () => {
-  for (const fallback of ['gemini-3.5-flash-lite', '']) {
+  for (const fallback of ['deepseek-flash', '', undefined]) {
     let calls = 0
     const response = await handleChat(request(), {
-      env: { ...env, GEMINI_FALLBACK_MODEL: fallback },
+      env: { ...env, DEEPSEEK_FALLBACK_MODEL: fallback },
       sleep: async () => {},
       fetcher: async () => { calls++; return new Response('{}', { status: 503 }) },
     })
@@ -369,11 +371,11 @@ test('quota errors inside an SSE frame are classified without repeated requests'
   let calls = 0
   const response = await handleChat(request(), {
     env,
-    fetcher: async () => { calls++; return provider([{ error: { code: 429, status: 'RESOURCE_EXHAUSTED', message: 'GenerateRequestsPerDayPerProjectPerModel' } }]) },
+    fetcher: async () => { calls++; return provider([{ error: { code: 402, message: 'Insufficient Balance' } }]) },
   })
   const output = await events(response)
   assert.equal(calls, 1)
-  assert.match(output.at(-1).message, /配额恢复/)
+  assert.match(output.at(-1).message, /模型调用额度不足/)
 })
 
 test('503 Retry-After is respected before a successful retry', async () => {
@@ -415,10 +417,10 @@ test('long JD carries evidence rules, and published contact is returned', async 
     documents: [...documents, { id: 'contact', type: 'contact', title: '联系', text: '欢迎安排面试', contact: 'mailto:public@example.com' }],
     fetcher: async (_, options) => {
       const body = JSON.parse(options.body)
-      assert.match(body.systemInstruction.parts[0].text, /可迁移能力/)
-      assert.match(body.systemInstruction.parts[0].text, /团队成果/)
-      assert.match(body.systemInstruction.parts[0].text, /不可信数据/)
-      assert.doesNotMatch(body.contents.at(-1).parts[0].text, /公开博客参考资料/)
+      assert.match(body.messages[0].content, /可迁移能力/)
+      assert.match(body.messages[0].content, /团队成果/)
+      assert.match(body.messages[0].content, /不可信数据/)
+      assert.doesNotMatch(body.messages.at(-1).content, /公开博客参考资料/)
       return provider([delta('依据项目资料。[1]'), completed])
     },
   }))

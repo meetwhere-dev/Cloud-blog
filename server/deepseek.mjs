@@ -26,23 +26,16 @@ export function abortableSleep(ms, signal) {
   })
 }
 
-function classifyError(status, payload, headers = new Headers()) {
+function classifyError(status, headers = new Headers()) {
   // Examine provider metadata only for classification; never forward raw errors or keys.
   const retryHeader = headers.get('retry-after')
   const headerMs = retryHeader
     ? (/^\d+(\.\d+)?$/.test(retryHeader) ? Number(retryHeader) * 1000 : Date.parse(retryHeader) - Date.now())
     : 0
-  if (status === 429) {
-    const detail = JSON.stringify(payload.error || {}).toLowerCase()
-    const daily = /perday|per_day|per day|daily|\brpd\b|quota_exceeded/.test(detail)
-    const minute = /perminute|per_minute|per minute|persecond|per second|rate_limit_exceeded/.test(detail)
-    const retryInfo = payload.error?.details?.find(item => item['@type']?.endsWith('RetryInfo'))
-    const retrySeconds = Number.parseFloat(retryInfo?.retryDelay || '')
-    const delayMs = Math.max(0, Number.isFinite(retrySeconds) ? retrySeconds * 1000 : 0, Number.isFinite(headerMs) ? headerMs : 0)
-    if (daily || (!minute && !retryInfo && !retryHeader))
-      return new ModelError('quota')
-    return new ModelError('rate_limit', true, delayMs)
-  }
+  if (status === 402)
+    return new ModelError('quota')
+  if (status === 429)
+    return new ModelError('rate_limit', true, Number.isFinite(headerMs) ? Math.max(0, headerMs) : 0)
   if ([408, 500, 502, 503, 504].includes(status))
     return new ModelError('unavailable', true, Number.isFinite(headerMs) ? Math.max(0, headerMs) : 0)
   return new ModelError('configuration')
@@ -55,7 +48,7 @@ export function failureMessage(cause, signal, partial = false, hasSources = true
   if (partial)
     return `回答中断，已保留生成内容。请重新生成${hint}。`
   if (cause?.code === 'quota')
-    return `模型调用额度不足，请等待配额恢复${hint}。`
+    return `模型调用额度不足，请稍后再试${hint}。`
   if (cause?.code === 'rate_limit')
     return `提问较多，暂时无法生成回答。请稍后重试${hint}。`
   if (cause?.code === 'blocked')
@@ -83,10 +76,10 @@ export async function generateAnswer({ key, models, body, signal, fetcher, onTex
       try {
         let response
         try {
-          response = await fetcher(new URL(`https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?alt=sse`), {
+          response = await fetcher(new URL('https://api.deepseek.com/chat/completions'), {
             method: 'POST',
-            headers: { 'x-goog-api-key': key, 'Content-Type': 'application/json' },
-            body: JSON.stringify(body),
+            headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...body, model }),
             signal,
           })
         }
@@ -96,32 +89,31 @@ export async function generateAnswer({ key, models, body, signal, fetcher, onTex
           throw new ModelError('unavailable', true)
         }
         if (!response.ok)
-          throw classifyError(response.status, await response.json().catch(() => ({})), response.headers)
+          throw classifyError(response.status, response.headers)
         if (!response.body)
           throw new ModelError('unavailable', true)
         let finished = false
         try {
           for await (const data of readSSE(response.body)) {
+            if (data === '[DONE]')
+              break
             const event = JSON.parse(data)
             if (event.error) {
-              const status = Number(event.error.code) || ({ RESOURCE_EXHAUSTED: 429, UNAVAILABLE: 503, INVALID_ARGUMENT: 400, PERMISSION_DENIED: 403 })[event.error.status] || 500
-              throw classifyError(status, { error: event.error })
+              const status = Number(event.error.status || event.error.code) || 500
+              throw classifyError(status)
             }
-            if (event.promptFeedback?.blockReason)
-              throw new ModelError('blocked')
-            const candidate = event.candidates?.[0]
-            if (candidate?.finishReason && candidate.finishReason !== 'STOP')
-              throw new ModelError(candidate.finishReason === 'MAX_TOKENS' ? 'length' : 'blocked')
-            for (const part of candidate?.content?.parts || []) {
-              if (part.thought || typeof part.text !== 'string' || !part.text)
-                continue
-              outputSize += part.text.length
+            const choice = event.choices?.[0]
+            if (choice?.finish_reason && choice.finish_reason !== 'stop')
+              throw new ModelError(choice.finish_reason === 'length' ? 'length' : 'blocked')
+            const text = choice?.delta?.content
+            if (typeof text === 'string' && text) {
+              outputSize += text.length
               if (outputSize > 16000)
                 throw new ModelError('length')
               receivedText = true
-              onText(part.text)
+              onText(text)
             }
-            if (candidate?.finishReason === 'STOP') {
+            if (choice?.finish_reason === 'stop') {
               finished = true
               break
             }

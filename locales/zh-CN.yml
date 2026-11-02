@@ -15,3 +15,23 @@ not-found: 未找到页面
 title:
   projects: 作品
   blogs: 博客
+  resume: 简历
+resume:
+  name: "万云峰"
+  role: "前端开发工程师"
+  leadFirst: "从界面交互到业务系统，"
+  leadSecond: "把想法做成可用的产品。"
+  city: "杭州"
+  focus: "前端开发 · 全栈开发 · AI 应用"
+  contact: "联系我"
+  print: "打印简历"
+  directory: "简历目录"
+  keepInTouch: "保持联系"
+  hintFirst: "想进一步了解项目？"
+  hintSecond: "点击右下角的简历助手。"
+  details: "个人简历详情"
+  title: "万云峰 · 个人简历"
+  closing: "期待与你交流"
+  description: "万云峰的个人简历：前端开发、全栈业务系统与 AI 应用，包含工作经历、代表项目及联系方式。"
+  language: "简历语言"
+  onThisPage: "页面目录"

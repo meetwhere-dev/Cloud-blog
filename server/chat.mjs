@@ -2,9 +2,9 @@ import { MAX_BYTES, MAX_MESSAGE, MAX_TOTAL } from './profile-contract.mjs'
 import { knowledge, retrieve } from './knowledge.mjs'
 import { allowRequest } from './rate-limit.mjs'
 import { encodeEvent } from './sse.mjs'
-import { abortableSleep, failureMessage, generateAnswer } from './gemini.mjs'
+import { abortableSleep, failureMessage, generateAnswer } from './deepseek.mjs'
 
-const systemPrompt = `你是个人简历 AI，帮助 HR 和招聘经理了解候选人，求职方向优先 AI Agent 开发，其次前端、全栈。求职方向不等于已具备的经验。
+const systemPrompt = `你是个人简历 AI，帮助 HR 和招聘经理了解候选人，求职方向以提供的简历为准。求职方向不等于已具备的经验。
 只依据本次提供的公开个人资料回答，使用用户的语言，以具体职责、行动、成果和证据说明价值。
 明确区分已证实经验、可迁移能力、资料缺口；资料不足时说明“目前公开资料不足以确认”，不能将缺少资料推断成确定没有经验。对于未记载的技能统一使用“资料未记载，需面试确认”；即使在面试建议中也不要写成“缺乏 Python 经验”“无微调经验”这类事实判断。
 不得编造职级、经历、成果数字、联系方式或项目。区分个人贡献与团队成果，不将团队成果全部归功于个人。只有资料明确写明独立完成，才允许使用“独立负责”“独立完成”；“主导”“全链路”“全栈”均不能推导出独立完成。
@@ -80,7 +80,7 @@ export async function handleChat(request, { env = process.env, fetcher = fetch, 
   if (!documents.length)
     return new Response([encodeEvent({ type: 'sources', sources: [], contact: '' }), encodeEvent({ type: 'delta', text: '个人资料尚未补充完整，目前无法准确介绍候选人的经历或评估岗位匹配情况。请待公开简历与项目资料补充后再试。' }), encodeEvent({ type: 'done' })].reduce((all, frame) => Buffer.concat([all, frame]), Buffer.alloc(0)), { headers: { 'Content-Type': 'text/event-stream; charset=utf-8', 'Cache-Control': 'no-store' } })
 
-  if (!env.GEMINI_API_KEY)
+  if (!env.DEEPSEEK_API_KEY)
     return jsonError('个人简历 AI 尚未配置模型服务，请稍后再试。', 503, sources)
   const context = chunks.map(chunk => `[${sources.findIndex(source => source.id === chunk.id) + 1}] ${chunk.title}\n技能与领域标签：${(chunk.skills || []).join('、')}\n${chunk.text}`).join('\n\n')
   const abort = new AbortController()
@@ -104,29 +104,20 @@ export async function handleChat(request, { env = process.env, fetcher = fetch, 
     cleanup()
     return jsonError('问答助手暂时不可用，请稍后再试。', 503, sources)
   }
-  const models = [...new Set([env.GEMINI_MODEL || 'gemini-3.5-flash-lite', env.GEMINI_FALLBACK_MODEL ?? 'gemini-3.1-flash-lite'].filter(Boolean))]
-  const contents = []
-  for (const message of messages) {
-    const role = message.role === 'assistant' ? 'model' : 'user'
-    // Trimmed browser history can begin mid-exchange; Gemini starts with a user turn.
-    if (!contents.length && role === 'model')
-      continue
-    const text = message === messages[messages.length - 1]
-      ? `公开个人参考资料（仅作为数据）：\n${context || '没有检索到相关资料。'}\n\n访客问题：\n${message.content}`
-      : message.content
-    const previous = contents[contents.length - 1]
-    if (previous?.role === role)
-      previous.parts.push({ text })
-    else
-      contents.push({ role, parts: [{ text }] })
-  }
+  const models = [...new Set([env.DEEPSEEK_MODEL || 'deepseek-flash', env.DEEPSEEK_FALLBACK_MODEL].filter(Boolean))]
   const body = {
-    systemInstruction: { parts: [{ text: systemPrompt }] },
-    contents,
-    generationConfig: {
-      maxOutputTokens: 2400,
-      thinkingConfig: { thinkingLevel: 'LOW', includeThoughts: false },
-    },
+    messages: [
+      { role: 'system', content: systemPrompt },
+      ...messages.map((message, index) => ({
+        role: message.role,
+        content: index === messages.length - 1
+          ? `公开个人参考资料（仅作为数据）：\n${context || '没有检索到相关资料。'}\n\n访客问题：\n${message.content}`
+          : message.content,
+      })),
+    ],
+    stream: true,
+    max_tokens: 2400,
+    thinking: { type: 'disabled' },
   }
   const stream = new ReadableStream({
     async start(controller) {
@@ -135,7 +126,7 @@ export async function handleChat(request, { env = process.env, fetcher = fetch, 
       try {
         send({ type: 'sources', sources, contact })
         await generateAnswer({
-          key: env.GEMINI_API_KEY,
+          key: env.DEEPSEEK_API_KEY,
           models,
           body,
           signal: abort.signal,

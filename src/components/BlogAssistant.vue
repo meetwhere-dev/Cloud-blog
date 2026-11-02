@@ -9,6 +9,7 @@ interface Message {
   role: 'user' | 'assistant'
   content: string
   sources: Source[]
+  errorMessage?: string
   state: 'complete' | 'loading' | 'error' | 'stopped'
 }
 const contact = ref('')
@@ -153,6 +154,7 @@ async function send(value = question.value, retry = false) {
     else {
       answer.state = 'error'
       error.value = cause instanceof Error ? cause.message : '请求失败，请重试。'
+      answer.errorMessage = error.value
     }
   }
   finally {
@@ -208,7 +210,7 @@ function retry() {
           <li v-for="message in messages" :key="message.id" class="assistant-message" :class="[message.role]">
             <span class="assistant-role">{{ message.role === 'user' ? '你' : '简历助手' }}</span>
             <div class="assistant-content">
-              {{ message.content || (message.state === 'loading' ? progress : message.state === 'error' ? (message.sources.length ? '暂时未能生成回答，可先阅读下面的相关资料。' : '暂时未能生成回答，请稍后重试。') : '已停止生成') }}
+              {{ message.content || (message.state === 'loading' ? progress : message.state === 'error' ? (message.errorMessage || '暂时未能生成回答，请稍后重试。') : '已停止生成') }}
             </div>
             <div v-if="visibleSources(message).length" class="assistant-sources">
               <span>{{ message.state === 'error' ? '相关资料' : '参考证据' }}</span>

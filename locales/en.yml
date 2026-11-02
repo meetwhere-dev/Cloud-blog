@@ -15,3 +15,23 @@ not-found: Not found
 title:
   projects: Projects
   blogs: Blogs
+  resume: Resume
+resume:
+  name: "Yunfeng Wan"
+  role: "Frontend Engineer"
+  leadFirst: "From interfaces to business systems,"
+  leadSecond: "turning ideas into working products."
+  city: "Hangzhou"
+  focus: "Frontend · Full-stack · AI Applications"
+  contact: "Contact me"
+  print: "Print resume"
+  directory: "Resume contents"
+  keepInTouch: "Get in touch"
+  hintFirst: "Want to explore my projects?"
+  hintSecond: "Open the resume assistant below."
+  details: "Resume details"
+  title: "Yunfeng Wan · Resume"
+  closing: "Let’s talk"
+  description: "Yunfeng Wan’s resume: frontend engineering, full-stack business systems, AI applications, work experience, projects, and contact information."
+  language: "Resume language"
+  onThisPage: "ON THIS PAGE"

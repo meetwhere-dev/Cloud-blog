@@ -8,6 +8,8 @@ title: 万云峰 [Wàn Yún Fēng]
 
 平生雅好，不在功名，而在器玩。凡数码新奇之物，无不留心；尤喜游海鲜之市，以低价觅遗珍，世谓之“捡漏”。暇则吸猫自娱，静听新世纪之乐，以遣尘虑。
 
+[查看我的个人简历 →](/resume)
+
 ***
 
 若欲寻余踪迹，可访吾网上之居： [GitHub](https://github.com/meetwhere-dev)，  [哔哩哔哩](https://space.bilibili.com/3830005)。

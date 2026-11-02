@@ -28,6 +28,10 @@ const toggleLocales = () => {
           <span class="lt-md:hidden">{{ t('title.projects') }}</span>
           <div i-ri-lightbulb-line class="md:hidden" />
         </router-link>
+        <router-link to="/resume" :title="t('title.resume')" :aria-label="t('title.resume')">
+          <span class="lt-md:hidden">{{ t('title.resume') }}</span>
+          <div i-carbon-document md:hidden />
+        </router-link>
         <a href="https://github.com/meetwhere-dev" target="_blank" title="GitHub" class="lt-md:hidden">
           <div i-carbon-logo-github />
         </a>
