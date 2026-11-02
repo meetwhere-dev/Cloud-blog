@@ -1,22 +1,37 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#070b17">
+  <meta name="description" content="在夜空中设计属于你的烟花。自由调整形态、配色、粒子与运动，点击天空发射。">
   <link rel="stylesheet" href="./index.css">
-  <title>Document</title>
+  <title>花火 · Fireworks Studio</title>
 </head>
 <body>
-  <form id="settings" onsubmit="return false">
-    StarSize<br/>
-    <input type="text" id="StarSize" value="5"/>
-    
-    StarSpeed<br/>
-    <input type="text" id="StarSpeed" value="5"/>
-    <button id="btnClear">Clear</button>
-    <button id="btnSet">Burst!</button><br/>
-  </form>
-  <script src="./index.js"></script>
+  <canvas id="sky" aria-label="烟花画布，点击任意位置发射。也可使用下方发射按钮。"></canvas>
+  <header class="topbar">
+    <a class="back" href="/projects" aria-label="返回作品">← <span>作品</span></a>
+    <div class="brand"><span class="brand-icon">✳</span><div>花火 <small>FIREWORKS STUDIO</small></div></div>
+    <div class="top-actions"><button id="fullscreen" class="glass" aria-pressed="false">全屏</button><button id="hideUI" class="glass" title="隐藏全部界面；按 Esc / U 或点击右上角恢复">隐藏界面</button><button id="togglePanel" class="glass" aria-expanded="true" aria-controls="settings">隐藏面板</button></div>
+  </header>
+  <div class="scene-label" aria-hidden="true"><span>YOUR OWN LITTLE UNIVERSE</span><h1>把夜空，<br>交给想象。</h1><p>点击任意位置，点亮一束烟花。</p></div>
+  <aside id="settings" class="panel">
+    <div class="panel-heading"><div><span class="eyebrow">THE CONTROL ROOM</span><h2>调一场喜欢的花火</h2></div><span class="live-dot" title="实时调节"></span></div>
+    <div class="panel-scroll">
+      <fieldset class="presets"><legend>灵感预设</legend><div><button data-preset="gold" aria-pressed="true">金色雨幕</button><button data-preset="neon" aria-pressed="false">霓虹派对</button><button data-preset="dream" aria-pressed="false">星河漫游</button></div></fieldset>
+      <div class="select-row"><label>烟花形态<select id="shape"><option value="willow">垂柳 · Willow</option><option value="peony">牡丹 · Peony</option><option value="ring">光环 · Ring</option><option value="heart">心形 · Heart</option><option value="palm">棕榈 · Palm</option><option value="random">随机混合</option></select></label><label>色彩方案<select id="palette"><option value="gold">香槟金</option><option value="neon">霓虹多彩</option><option value="ice">冰蓝星河</option><option value="rose">玫瑰粉紫</option><option value="custom">自选颜色</option></select></label></div>
+      <label class="color-row" id="customRow" hidden>自选颜色<input id="customColor" type="color" value="#a5bbff"></label>
+      <div id="sliders" class="sliders"></div>
+      <div class="switch-row"><label for="sound">烟花音效<small id="soundStatus" role="status">点击页面后开启声音</small></label><input id="sound" type="checkbox" role="switch" checked></div>
+      <div class="slider-field sound-volume"><div class="slider-title"><label for="volume">音量</label><output id="volumeValue" for="volume">35%</output></div><input id="volume" type="range" min="0" max="100" step="1" value="35" aria-valuetext="35%"></div>
+      <div class="switch-row"><label for="auto">自动发射<small>让烟花持续点亮夜空</small></label><input id="auto" type="checkbox" role="switch" checked></div>
+      <div class="switch-row"><label for="sparkle">闪烁星屑<small>在余烬中加入细碎星光</small></label><input id="sparkle" type="checkbox" role="switch" checked></div>
+    </div>
+    <div class="panel-footer"><button id="reset">恢复默认</button><span>调整即时生效 · 新烟花采用新参数</span></div>
+  </aside>
+  <footer class="bottom-bar"><div class="scene-status"><span id="statusDot"></span><span id="status" role="status">夜空正在上演</span><small id="particleCount">0 粒星光</small></div><div class="transport"><button id="pause" class="glass" aria-pressed="false">Ⅱ 暂停</button><button id="launch" class="primary">发射一束 <span>↗</span></button><button id="salvo" class="glass">五连齐射</button><button id="clear" class="glass">清空</button></div><span class="keyboard-hint">SPACE 暂停 · H 面板 · U 界面 · F 全屏</span></footer>
+  <button id="restoreUI" aria-label="恢复界面" title="恢复界面" hidden>恢复界面</button>
+  <script type="module" src="./index.js"></script>
 </body>
 </html>

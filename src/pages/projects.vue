@@ -61,9 +61,9 @@ const projects = [
     date: '2019-06-22T08:00:00.000+00:00',
     icon: 'i-arcticons-a2048',
   }, {
-    name: 'Firework',
+    name: '花火 · Fireworks Studio',
     link: '/firework/index.html',
-    desc: '烟花.',
+    desc: '交互烟花实验室 · 5 种形态、色彩预设与实时参数调节',
     icon: 'i-emojione-monotone-fireworks',
   }, {
     name: 'illustrator-demo',
