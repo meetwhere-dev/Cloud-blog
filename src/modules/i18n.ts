@@ -1,4 +1,6 @@
+import { watch } from 'vue'
 import { createI18n } from 'vue-i18n'
+import { browserLocale } from '~/utils/locale'
 import { type UserModule } from '~/types'
 
 // Import i18n resources
@@ -14,12 +16,18 @@ const messages = Object.fromEntries(
     }),
 )
 
-export const install: UserModule = ({ app }) => {
+export const install: UserModule = ({ app, isClient }) => {
   const i18n = createI18n({
     legacy: false,
-    locale: 'en',
+    locale: isClient ? browserLocale(navigator.languages, navigator.language) : 'en',
+    fallbackLocale: 'en',
     messages,
   })
 
   app.use(i18n)
+  if (isClient) {
+    watch(i18n.global.locale, (locale) => {
+      document.documentElement.lang = locale
+    }, { immediate: true })
+  }
 }
