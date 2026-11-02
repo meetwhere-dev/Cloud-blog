@@ -54,7 +54,7 @@ assistant:
   close: 关闭问答助手
   welcomeTitle: 从一个问题开始
   welcomeBody: 了解他的经历、项目和成果，或粘贴职位描述。
-  welcomeEvidence: 我会依据公开个人资料说明匹配证据和经验缺口，并使用你提问的语言回答。
+  welcomeEvidence: 我会依据公开个人资料说明匹配证据和经验缺口。
   suggestion1: 你最近在忙什么项目？
   suggestion2: 你做的 AI 客服能帮用户做些什么？
   suggestion3: 从前端到全栈，你的经历是怎样的？

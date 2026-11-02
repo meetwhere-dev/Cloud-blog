@@ -54,7 +54,7 @@ assistant:
   close: Close resume assistant
   welcomeTitle: Start with a question
   welcomeBody: 'Explore his experience, projects, and achievements, or paste a job description.'
-  welcomeEvidence: 'I will use the public profile to explain supporting evidence and experience gaps, and answer in the language you use.'
+  welcomeEvidence: 'I will use the public profile to explain supporting evidence and experience gaps.'
   suggestion1: What projects have you been working on recently?
   suggestion2: What can your AI customer service assistant help users with?
   suggestion3: How did you move from frontend to full-stack development?
