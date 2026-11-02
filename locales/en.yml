@@ -58,6 +58,24 @@ assistant:
   suggestion1: What projects have you been working on recently?
   suggestion2: What can your AI customer service assistant help users with?
   suggestion3: How did you move from frontend to full-stack development?
+  quickAnswer1: |
+    I have recently been working on two main projects.
+
+    The first is the website AI customer service agent, where I lead the full-stack implementation: Vue and SSE for the chat interface, TypeScript, Node.js and Mastra for model and business-service integration, Redis for sessions, and MySQL for records. It connects self-service answers and business queries with human support through Feishu and Zendesk.
+
+    The second is an overseas brand influencer collaboration management system. I handle frontend, backend and Feishu approval integration using React, TypeScript, Node.js and PostgreSQL. It brings influencer profiles, contracts, samples, logistics, content reviews and settlements into a shared workflow, with a Chinese admin interface and an English creator portal.
+  quickAnswer2: |
+    The AI customer service assistant helps with product questions, common FAQs, order and shipping queries, and handoff to human support.
+
+    Prices, orders and shipping information come from business APIs, with data and user-permission checks before answering. The conversation tracks information already provided and the current progress, reducing repeated questions.
+
+    For issues requiring human help, it connects to Feishu and Zendesk. Before submitting a ticket, it shows a summary for user confirmation and handles duplicate submissions and API failures. Common questions can return standard answers without calling a language model.
+  quickAnswer3: |
+    My work expanded from frontend interfaces into the backend services and integrations needed to deliver complete business workflows.
+
+    At PatternGo, I worked on Canvas/Fabric.js interactions, reusable drawing objects and UI components. At Femometer, my responsibilities included Vue/Nuxt.js websites, SSR, multilingual support, payments and deployment automation.
+
+    More recently, the influencer collaboration system involved Node.js/Express, PostgreSQL and Feishu approvals alongside React interfaces. The AI customer service project added model integration with Mastra, session management, business queries and human-support handoff. These projects reflect the progression from building interfaces to connecting frontend, backend, data and business services.
   transcript: Conversation history
   you: You
   role: Resume assistant

@@ -25,7 +25,7 @@ const input = ref<HTMLTextAreaElement>()
 const panel = ref<HTMLElement>()
 const launcher = ref<HTMLButtonElement>()
 const transcript = ref<HTMLElement>()
-const suggestions = computed(() => [t('assistant.suggestion1'), t('assistant.suggestion2'), t('assistant.suggestion3')])
+const suggestions = computed(() => [1, 2, 3].map(id => ({ id, question: t(`assistant.suggestion${id}`), answer: t(`assistant.quickAnswer${id}`) })))
 let request: AbortController | undefined
 let nextId = 0
 let conversationId = ''
@@ -61,6 +61,16 @@ function serverMessage(code: unknown, fallback: string, hasSources: boolean) {
   return typeof code === 'string' && te(key)
     ? t(key) + (hasSources ? ` ${t('assistant.errors.sourcesHint')}` : '')
     : fallback
+}
+function selectSuggestion(suggestion: { question: string; answer: string }) {
+  if (busy.value)
+    return
+  error.value = ''
+  messages.value.push(
+    { id: ++nextId, questionId: crypto.randomUUID(), role: 'user', content: suggestion.question, sources: [], state: 'complete' },
+    { id: ++nextId, role: 'assistant', content: suggestion.answer, sources: [], state: 'complete' },
+  )
+  nextTick(() => input.value?.focus())
 }
 function stop() {
   request?.abort()
@@ -214,8 +224,8 @@ function retry() {
           </div>
           <h3>{{ t('assistant.welcomeTitle') }}</h3>
           <p>{{ t('assistant.welcomeBody') }}<br>{{ t('assistant.welcomeEvidence') }}</p>
-          <button v-for="suggestion in suggestions" :key="suggestion" class="assistant-suggestion" @click="send(suggestion)">
-            {{ suggestion }} <span aria-hidden="true">↗</span>
+          <button v-for="suggestion in suggestions" :key="suggestion.id" class="assistant-suggestion" @click="selectSuggestion(suggestion)">
+            {{ suggestion.question }} <span aria-hidden="true">↗</span>
           </button>
         </div>
         <ol v-else class="assistant-messages" :aria-label="t('assistant.transcript')">

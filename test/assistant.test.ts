@@ -39,6 +39,44 @@ describe('resume assistant languages', () => {
     expect(page.get('textarea').attributes('placeholder')).toContain('询问项目经验')
   })
 
+  it('answers all shortcuts locally in both languages', async () => {
+    const fetcher = vi.spyOn(globalThis, 'fetch')
+    const { page, i18n } = openAssistant()
+    await page.get('.assistant-launcher').trigger('click')
+    for (const language of ['en', 'zh-CN']) {
+      i18n.global.locale.value = language
+      await flushPromises()
+      for (let index = 0; index < 3; index++) {
+        const question = page.findAll('.assistant-suggestion')[index].text().replace('↗', '').trim()
+        await page.findAll('.assistant-suggestion')[index].trigger('click')
+        expect(page.get('.assistant-message.user').text()).toContain(question)
+        expect(page.get('.assistant-message.assistant').text()).toContain(index === 0 ? 'React' : index === 1 ? 'Zendesk' : 'PatternGo')
+        expect(page.get('.assistant-message.assistant').text()).toContain(i18n.global.t(`assistant.quickAnswer${index + 1}`).trim())
+        expect(fetcher).not.toHaveBeenCalled()
+        await page.get(`[aria-label="${i18n.global.t('assistant.newChat')}"]`).trigger('click')
+      }
+    }
+  })
+
+  it('calls AI for a follow-up and includes the fixed exchange as context', async () => {
+    const fetcher = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('data: {"type":"delta","text":"Follow-up answer"}\n\ndata: {"type":"done"}\n\n', {
+      headers: { 'Content-Type': 'text/event-stream' },
+    }))
+    const { page } = openAssistant()
+    await page.get('.assistant-launcher').trigger('click')
+    await page.get('.assistant-suggestion').trigger('click')
+    expect(fetcher).not.toHaveBeenCalled()
+    await page.get('textarea').setValue('Tell me more about the first project.')
+    await page.get('form').trigger('submit')
+    await flushPromises()
+    expect(fetcher).toHaveBeenCalledTimes(1)
+    const body = JSON.parse(String(fetcher.mock.calls[0][1]?.body))
+    expect(body.messages.map((message: { role: string }) => message.role)).toEqual(['user', 'assistant', 'user'])
+    expect(body.messages[1].content).toContain('Mastra')
+    expect(body.messages[2].content).toBe('Tell me more about the first project.')
+    expect(page.text()).toContain('Follow-up answer')
+  })
+
   it('keeps the original question and model reply independent of the English interface', async () => {
     let body: { locale: string; messages: { role: string; content: string }[] } | undefined
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (_, options) => {
