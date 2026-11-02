@@ -113,3 +113,30 @@ assistant:
     blocked: 模型未能回答这个问题，请调整问题。
     length: 回答超过长度限制，请缩短问题。
     sourcesHint: 也可以先阅读下方资料。
+projects:
+  vectorStudio:
+    description: AI 重构矢量绘图工具 · 直线与贝塞尔曲线绘制、路径侦测、实时长度测量
+  three2048:
+    description: 用 AI 重做第一个小游戏：立体积木、合并特效与结算动画
+  somind:
+    name: Somind 应用官网
+  bible:
+    name: Bible 应用官网
+  epub:
+    name: EPUB 英语书阅读器
+    description: 用于阅读英语书籍的 EPUB 阅读器
+  faceYogi:
+    name: FaceYogi 应用官网
+  femometer:
+    name: Femometer 在线商城
+  wechatAnnualReport:
+    name: 微信年报 2024
+    description: 回顾你的 2024 年微信记录
+  original2048:
+    description: 2048 小游戏演示 · 我的第一个项目
+  fireworksStudio:
+    description: 交互烟花实验室 · 5 种形态、色彩预设与实时参数调节
+  illustratorDemo:
+    description: 矢量绘图演示
+  faceDetect:
+    description: 人脸识别 · 机器学习演示

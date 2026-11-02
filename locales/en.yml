@@ -113,3 +113,30 @@ assistant:
     blocked: The model could not answer this question. Please rephrase it.
     length: The response exceeded the length limit. Please shorten your question.
     sourcesHint: You can also read the supporting material below.
+projects:
+  vectorStudio:
+    description: AI-rebuilt vector drawing tool · Lines and Bézier curves, path detection, and real-time length measurement
+  three2048:
+    description: 'My first game, rebuilt with AI: 3D blocks, merge effects, and end-of-game animations'
+  somind:
+    name: Somind App Website
+  bible:
+    name: Bible App Website
+  epub:
+    name: EPUB English Book Reader
+    description: An EPUB reader for English books
+  faceYogi:
+    name: FaceYogi App Website
+  femometer:
+    name: Femometer Online Store
+  wechatAnnualReport:
+    name: WeChat Annual Report 2024
+    description: Your 2024 in review on WeChat
+  original2048:
+    description: 2048 game demo · My first project
+  fireworksStudio:
+    description: Interactive fireworks lab · Five shapes, color presets, and real-time parameter controls
+  illustratorDemo:
+    description: Vector drawing demo
+  faceDetect:
+    description: Face detection · Machine learning demo
