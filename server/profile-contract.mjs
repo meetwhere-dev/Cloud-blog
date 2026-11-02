@@ -20,7 +20,7 @@ export function chatPayload(history, text) {
   if (!text.trim() || text.length > MAX_MESSAGE)
     throw new Error('问题或职位描述最多 8,000 字，请缩短后再发送。')
   const messages = [...history.filter(message => message.content.length <= MAX_MESSAGE).slice(-11), { role: 'user', content: text }]
-  while (messages.length > 1 && (messages.reduce((sum, message) => sum + message.content.length, 0) > MAX_TOTAL || new TextEncoder().encode(JSON.stringify({ messages })).length > MAX_BYTES))
+  while (messages.length > 1 && (messages.reduce((sum, message) => sum + message.content.length, 0) > MAX_TOTAL || new TextEncoder().encode(JSON.stringify({ messages, locale: 'zh-CN', conversationId: '0'.repeat(36), questionId: '0'.repeat(36) })).length > MAX_BYTES))
     messages.shift()
   return messages
 }

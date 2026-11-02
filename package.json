@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "@types/diacritics": "^1.3.1",
+    "@vercel/functions": "3.10.5",
     "@vueuse/core": "^8.7.5",
     "@vueuse/head": "^0.7.6",
     "dayjs": "^1.11.3",

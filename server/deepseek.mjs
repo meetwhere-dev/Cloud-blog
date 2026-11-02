@@ -41,6 +41,14 @@ function classifyError(status, headers = new Headers()) {
   return new ModelError('configuration')
 }
 
+export function failureCode(cause, signal, partial = false) {
+  if (signal.aborted && signal.reason?.name === 'TimeoutError')
+    return partial ? 'partial_timeout' : 'timeout'
+  if (partial)
+    return 'partial'
+  return ['quota', 'rate_limit', 'blocked', 'length', 'configuration'].includes(cause?.code) ? cause.code : 'unavailable'
+}
+
 export function failureMessage(cause, signal, partial = false, hasSources = true) {
   const hint = hasSources ? '或先阅读下方资料' : ''
   if (signal.aborted && signal.reason?.name === 'TimeoutError')
@@ -60,16 +68,17 @@ export function failureMessage(cause, signal, partial = false, hasSources = true
   return `服务暂时繁忙，请稍后重试${hint}。`
 }
 
-export async function generateAnswer({ key, models, body, signal, fetcher, onText, onStatus, sleep = abortableSleep, random = Math.random, deadline }) {
+export async function generateAnswer({ key, models, body, signal, fetcher, onText, onStatus, onModel, sleep = abortableSleep, random = Math.random, deadline }) {
   let receivedText = false
   let outputSize = 0
   let lastError = new ModelError('unavailable', true)
   for (let modelIndex = 0; modelIndex < models.length; modelIndex++) {
     const model = models[modelIndex]
+    onModel?.(model)
     if (!/^[a-z0-9.-]+$/.test(model))
       throw new ModelError('configuration')
     if (modelIndex)
-      onStatus('正在尝试备用服务…')
+      onStatus('正在尝试备用服务…', 'fallback')
     const attempts = modelIndex === 0 ? 3 : 1
     for (let attempt = 0; attempt < attempts; attempt++) {
       signal.throwIfAborted()
@@ -137,7 +146,7 @@ export async function generateAnswer({ key, models, body, signal, fetcher, onTex
           // Never retry sooner than Retry-After, or keep a request alive past its budget.
           if (Date.now() + delay >= deadline)
             throw cause
-          onStatus('服务繁忙，正在重试…')
+          onStatus('服务繁忙，正在重试…', 'retrying')
           await sleep(delay, signal)
         }
       }

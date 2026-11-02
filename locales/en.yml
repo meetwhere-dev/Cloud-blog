@@ -46,3 +46,52 @@ home:
   resume: "View my resume →"
   elsewhere: "You can also find me online:"
   bilibili: "Bilibili"
+assistant:
+  name: Resume AI
+  reading: Reviewing the profile…
+  generating: Writing a response…
+  newChat: Start a new conversation
+  close: Close resume assistant
+  welcomeTitle: Start with a question
+  welcomeBody: 'Explore his experience, projects, and achievements, or paste a job description.'
+  welcomeEvidence: 'I will use the public profile to explain supporting evidence and experience gaps, and answer in the language you use.'
+  suggestion1: What projects have you been working on recently?
+  suggestion2: What can your AI customer service assistant help users with?
+  suggestion3: How did you move from frontend to full-stack development?
+  transcript: Conversation history
+  you: You
+  role: Resume assistant
+  unavailable: Unable to generate a response. Please try again later.
+  stopped: Generation stopped.
+  related: Related material
+  evidence: Supporting evidence
+  stoppedPartial: Stopped · The response may be incomplete
+  partial: Interrupted · The response may be incomplete
+  tryLater: Please try again later
+  retry: Try again
+  contact: Contact me to arrange an interview ↗
+  inputLabel: Enter a hiring question or job description
+  placeholder: 'Ask about project experience or paste a job description (up to 8,000 characters)…'
+  stop: Stop
+  send: Send ↑
+  disclaimer: AI answers are for reference. Verify them against the public profile and in an interview. Questions are sent to the model provider. Conversations may be saved to improve answers; do not include sensitive information.
+  tooLong: 'Questions or job descriptions must be no longer than 8,000 characters. Please shorten your message.'
+  connection: Unable to connect to the assistant. Please try again later.
+  invalidResponse: No valid response received. Please try again.
+  interrupted: The response was interrupted. Please try again.
+  requestFailed: The request failed. Please try again.
+  retrying: The service is busy. Retrying…
+  fallback: Trying the backup service…
+  errors:
+    origin: This request origin is not supported.
+    input: Invalid question or conversation. Shorten your message or start a new conversation.
+    configuration: The model service is temporarily unavailable. Please try again later.
+    rate_limit: Too many requests. Please try again later.
+    unavailable: The service is busy. Please try again later.
+    timeout: The response timed out. Please try again later.
+    partial_timeout: The response timed out. The generated text has been kept. Please try again.
+    partial: The response was interrupted. The generated text has been kept. Please try again.
+    quota: The model service has insufficient quota. Please try again later.
+    blocked: The model could not answer this question. Please rephrase it.
+    length: The response exceeded the length limit. Please shorten your question.
+    sourcesHint: You can also read the supporting material below.

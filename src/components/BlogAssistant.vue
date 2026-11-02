@@ -5,6 +5,7 @@ import { readSSE } from '../../server/sse.mjs'
 
 interface Source { id: string; title: string; excerpt: string; links: { label: string; url: string }[] }
 interface Message {
+  questionId?: string
   id: number
   role: 'user' | 'assistant'
   content: string
@@ -12,20 +13,22 @@ interface Message {
   errorMessage?: string
   state: 'complete' | 'loading' | 'error' | 'stopped'
 }
+const { t, te, locale } = useI18n()
 const contact = ref('')
 const open = ref(false)
 const question = ref('')
 const busy = ref(false)
 const error = ref('')
-const progress = ref('正在查阅个人资料…')
+const progress = ref(t('assistant.reading'))
 const messages = ref<Message[]>([])
 const input = ref<HTMLTextAreaElement>()
 const panel = ref<HTMLElement>()
 const launcher = ref<HTMLButtonElement>()
 const transcript = ref<HTMLElement>()
-const suggestions = ['你最近在忙什么项目？', '你做的 AI 客服能帮用户做些什么？', '从前端到全栈，你的经历是怎样的？']
+const suggestions = computed(() => [t('assistant.suggestion1'), t('assistant.suggestion2'), t('assistant.suggestion3')])
 let request: AbortController | undefined
 let nextId = 0
+let conversationId = ''
 
 watch(open, async (visible) => {
   await nextTick()
@@ -53,12 +56,19 @@ function safeSources(value: unknown): Source[] {
   return value.filter((source: Source) => source && typeof source.id === 'string' && typeof source.title === 'string' && typeof source.excerpt === 'string')
     .map((source: Source) => ({ ...source, links: (Array.isArray(source.links) ? source.links : []).filter(link => link && typeof link.label === 'string' && safePublicUrl(link.url)) }))
 }
+function serverMessage(code: unknown, fallback: string, hasSources: boolean) {
+  const key = `assistant.errors.${code}`
+  return typeof code === 'string' && te(key)
+    ? t(key) + (hasSources ? ` ${t('assistant.errors.sourcesHint')}` : '')
+    : fallback
+}
 function stop() {
   request?.abort()
 }
 function reset() {
   if (busy.value)
     return
+  conversationId = ''
   messages.value = []
   error.value = ''
   input.value?.focus()
@@ -87,19 +97,21 @@ async function send(value = question.value, retry = false) {
   if (busy.value || !text)
     return
   if (text.length > MAX_MESSAGE) {
-    error.value = '问题或职位描述最多 8,000 字，请缩短后再发送。'
+    error.value = t('assistant.tooLong')
     return
   }
   error.value = ''
-  progress.value = '正在查阅个人资料…'
+  progress.value = t('assistant.reading')
   if (retry) {
     const failed = messages.value[messages.value.length - 1]
     if (failed?.role === 'assistant' && failed.state !== 'complete')
       messages.value.pop()
   }
   else {
-    messages.value.push({ id: ++nextId, role: 'user', content: text, sources: [], state: 'complete' })
+    messages.value.push({ id: ++nextId, role: 'user', questionId: crypto.randomUUID(), content: text, sources: [], state: 'complete' })
   }
+  conversationId ||= crypto.randomUUID()
+  const questionId = messages.value[messages.value.length - 1].questionId
   question.value = ''
   // Only successful exchanges go back to the model, within the server's context budget.
   const history = messages.value.slice(0, -1).filter(message => message.state === 'complete')
@@ -113,16 +125,16 @@ async function send(value = question.value, retry = false) {
     const response = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ messages: payload }),
+      body: JSON.stringify({ messages: payload, locale: locale.value, conversationId, questionId }),
       signal: request.signal,
     })
     if (!response.ok) {
       const body = await response.json().catch(() => ({}))
       answer.sources = safeSources(body.sources)
-      throw new Error(body.error || '暂时无法连接问答助手，请稍后重试。')
+      throw new Error(serverMessage(body.code, body.error || t('assistant.connection'), answer.sources.length > 0))
     }
     if (!response.body || !response.headers.get('content-type')?.includes('text/event-stream'))
-      throw new Error('未收到有效回答，请重试。')
+      throw new Error(t('assistant.invalidResponse'))
     let completed = false
     for await (const data of readSSE(response.body)) {
       const event = JSON.parse(data)
@@ -132,28 +144,28 @@ async function send(value = question.value, retry = false) {
       }
 
       else if (event.type === 'delta') {
-        progress.value = '正在生成回答…'
+        progress.value = t('assistant.generating')
         answer.content += event.text
       }
 
-      else if (event.type === 'status') { progress.value = event.message }
+      else if (event.type === 'status') { progress.value = event.code && te(`assistant.${event.code}`) ? t(`assistant.${event.code}`) : event.message }
 
-      else if (event.type === 'error') { throw new Error(event.message) }
+      else if (event.type === 'error') { throw new Error(serverMessage(event.code, event.message, answer.sources.length > 0)) }
 
       else if (event.type === 'done') { completed = true }
     }
     if (!completed)
-      throw new Error('回答中断，请重试。')
+      throw new Error(t('assistant.interrupted'))
     answer.state = 'complete'
   }
   catch (cause) {
     if (request.signal.aborted) {
       answer.state = 'stopped'
-      error.value = '已停止生成。'
+      error.value = t('assistant.stopped')
     }
     else {
       answer.state = 'error'
-      error.value = cause instanceof Error ? cause.message : '请求失败，请重试。'
+      error.value = cause instanceof Error ? cause.message : t('assistant.requestFailed')
       answer.errorMessage = error.value
     }
   }
@@ -174,7 +186,7 @@ function retry() {
 <template>
   <div class="blog-assistant">
     <button v-if="!open" ref="launcher" class="assistant-launcher" aria-haspopup="dialog" aria-controls="blog-assistant-panel" :aria-expanded="open" @click="open = true">
-      <span aria-hidden="true">✦</span> 个人简历 AI
+      <span aria-hidden="true">✦</span> {{ t('assistant.name') }}
     </button>
     <section v-if="open" id="blog-assistant-panel" ref="panel" class="assistant-panel" role="dialog" aria-modal="true" aria-labelledby="assistant-title" @keydown="keyboard">
       <header class="assistant-header">
@@ -183,14 +195,14 @@ function retry() {
             CAREER · AI AGENT · FRONTEND · FULL STACK
           </div>
           <h2 id="assistant-title">
-            个人简历 AI <span aria-hidden="true">✦</span>
+            {{ t('assistant.name') }} <span aria-hidden="true">✦</span>
           </h2>
         </div>
         <div class="assistant-actions">
-          <button :disabled="busy" title="开启新对话" aria-label="开启新对话" @click="reset">
+          <button :disabled="busy" :title="t('assistant.newChat')" :aria-label="t('assistant.newChat')" @click="reset">
             ↻
           </button>
-          <button title="关闭问答助手" aria-label="关闭问答助手" @click="open = false">
+          <button :title="t('assistant.close')" :aria-label="t('assistant.close')" @click="open = false">
             ×
           </button>
         </div>
@@ -200,20 +212,20 @@ function retry() {
           <div class="assistant-spark" aria-hidden="true">
             ✦
           </div>
-          <h3>从一个问题开始</h3>
-          <p>了解他的经历、项目和成果，或粘贴职位描述。<br>我会依据公开个人资料说明匹配证据和经验缺口。</p>
+          <h3>{{ t('assistant.welcomeTitle') }}</h3>
+          <p>{{ t('assistant.welcomeBody') }}<br>{{ t('assistant.welcomeEvidence') }}</p>
           <button v-for="suggestion in suggestions" :key="suggestion" class="assistant-suggestion" @click="send(suggestion)">
             {{ suggestion }} <span aria-hidden="true">↗</span>
           </button>
         </div>
-        <ol v-else class="assistant-messages" aria-label="对话记录">
+        <ol v-else class="assistant-messages" :aria-label="t('assistant.transcript')">
           <li v-for="message in messages" :key="message.id" class="assistant-message" :class="[message.role]">
-            <span class="assistant-role">{{ message.role === 'user' ? '你' : '简历助手' }}</span>
+            <span class="assistant-role">{{ message.role === 'user' ? t('assistant.you') : t('assistant.role') }}</span>
             <div class="assistant-content">
-              {{ message.content || (message.state === 'loading' ? progress : message.state === 'error' ? (message.errorMessage || '暂时未能生成回答，请稍后重试。') : '已停止生成') }}
+              {{ message.content || (message.state === 'loading' ? progress : message.state === 'error' ? (message.errorMessage || t('assistant.unavailable')) : t('assistant.stopped')) }}
             </div>
             <div v-if="visibleSources(message).length" class="assistant-sources">
-              <span>{{ message.state === 'error' ? '相关资料' : '参考证据' }}</span>
+              <span>{{ message.state === 'error' ? t('assistant.related') : t('assistant.evidence') }}</span>
               <details v-for="source in visibleSources(message)" :key="source.id">
                 <summary>[{{ source.number }}] {{ source.title }}</summary>
                 <p class="assistant-evidence">
@@ -222,33 +234,33 @@ function retry() {
                 <a v-for="link in source.links" :key="link.url" :href="link.url" target="_blank" rel="noopener noreferrer">{{ link.label }} ↗</a>
               </details>
             </div>
-            <small v-if="message.state === 'stopped' || message.state === 'error'" class="assistant-incomplete">{{ message.state === 'stopped' ? '已停止 · 回答可能不完整' : message.content ? '回答中断 · 内容可能不完整' : '可稍后重试' }}</small>
+            <small v-if="message.state === 'stopped' || message.state === 'error'" class="assistant-incomplete">{{ message.state === 'stopped' ? t('assistant.stoppedPartial') : message.content ? t('assistant.partial') : t('assistant.tryLater') }}</small>
           </li>
         </ol>
       </div>
       <div class="assistant-status" role="status" aria-live="polite">
         <template v-if="error">
           {{ error }} <button v-if="!busy" @click="retry">
-            重新尝试
+            {{ t('assistant.retry') }}
           </button>
         </template>
         <template v-else-if="busy">
           {{ progress }}
         </template>
       </div>
-      <a v-if="contact" class="assistant-contact" :href="contact" target="_blank" rel="noopener noreferrer">联系我安排面试 ↗</a>
+      <a v-if="contact" class="assistant-contact" :href="contact" target="_blank" rel="noopener noreferrer">{{ t('assistant.contact') }}</a>
       <form class="assistant-form" @submit.prevent="send()">
-        <label class="sr-only" for="assistant-question">输入招聘相关问题或职位描述</label>
-        <textarea id="assistant-question" ref="input" v-model="question" rows="2" :disabled="busy" placeholder="询问项目经验，或粘贴职位描述（最多 8,000 字）…" @keydown.enter.exact="!$event.isComposing && ($event.preventDefault(), send())" />
+        <label class="sr-only" for="assistant-question">{{ t('assistant.inputLabel') }}</label>
+        <textarea id="assistant-question" ref="input" v-model="question" rows="2" :disabled="busy" :placeholder="t('assistant.placeholder')" @keydown.enter.exact="!$event.isComposing && ($event.preventDefault(), send())" />
         <button v-if="busy" type="button" class="assistant-send" @click="stop">
-          停止
+          {{ t('assistant.stop') }}
         </button>
         <button v-else type="submit" class="assistant-send" :disabled="!question.trim()">
-          发送 ↑
+          {{ t('assistant.send') }}
         </button>
       </form>
       <p class="assistant-disclaimer">
-        AI 回答仅供参考，请以公开资料及面试核实为准。问题将发送给模型服务，请勿输入敏感信息。
+        {{ t('assistant.disclaimer') }}
       </p>
     </section>
   </div>
