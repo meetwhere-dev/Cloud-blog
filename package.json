@@ -5,8 +5,8 @@
     "node": "22.x"
   },
   "scripts": {
-    "build": "node scripts/build-knowledge.mjs && vite-ssg build",
-    "dev": "vite --port 3333 --open",
+    "build": "node scripts/sync-vector-studio.mjs && node scripts/build-knowledge.mjs && vite-ssg build",
+    "dev": "node scripts/sync-vector-studio.mjs && vite --port 3333 --open",
     "lint": "eslint .",
     "preview": "vite preview",
     "preview-https": "serve dist",

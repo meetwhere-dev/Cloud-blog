@@ -7,6 +7,13 @@ const { t } = useI18n()
 
 const projects = [
   {
+    name: '线迹 · Vector Studio',
+    link: '/vector-studio/index.html',
+    desc: 'AI 重构矢量绘图工具 · 直线与贝塞尔曲线绘制、路径侦测、实时长度测量',
+    date: '2026-11-02T08:00:00.000+00:00',
+    icon: 'i-cib-adobe-illustrator',
+  },
+  {
     name: '2048 · Three.js',
     link: '/games/2048-three',
     desc: '用 AI 重做第一个小游戏：立体积木、合并特效与结算动画',

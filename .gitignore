@@ -15,3 +15,6 @@ node_modules
 server/generated/*.json
 
 .pnpm-store/
+
+# Generated standalone project assets
+/public/vector-studio/

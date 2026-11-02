@@ -1,0 +1,16 @@
+{
+  "name": "vector-studio",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "直线与贝塞尔曲线绘制、侦测和长度测量",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "node scripts/serve.mjs",
+    "build": "node scripts/build.mjs",
+    "preview": "node scripts/serve.mjs --dist",
+    "test": "node --test test/*.test.mjs"
+  }
+}
