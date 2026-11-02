@@ -20,9 +20,16 @@ import LinkAttributes from 'markdown-it-link-attributes'
 import Unocss from 'unocss/vite'
 import { slugify } from './scripts/slugify'
 
+const englishPosts = /\/src\/content\/posts\/en\/[^/]+\.md$/
+const originalPosts = /\/src\/pages\/posts\/(?!index\.md$)[^/]+\.md$/
+
 const markdownWrapperClasses = 'prose prose-sm m-auto text-left'
 
 export default defineConfig({
+  // Standalone HTML demos are served as static assets, not Vite application entries.
+  optimizeDeps: {
+    entries: ['index.html'],
+  },
   resolve: {
     alias: {
       '~/': `${path.resolve(__dirname, 'src')}/`,
@@ -60,6 +67,11 @@ export default defineConfig({
         if (!path.includes('README')) {
           const md = fs.readFileSync(path, 'utf-8')
           const { data } = matter(md)
+          if (originalPosts.test(path)) {
+            const translation = resolve(__dirname, 'src/content/posts/en', path.split('/').pop()!)
+            const { data: english } = matter(fs.readFileSync(translation, 'utf-8'))
+            data.translations = { en: english }
+          }
           route.meta = Object.assign(route.meta || {}, { frontmatter: data })
         }
 
@@ -103,10 +115,13 @@ export default defineConfig({
 
     // https://github.com/antfu/vite-plugin-vue-markdown
     // Don't need this? Try vitesse-lite: https://github.com/antfu/vitesse-lite
-    Markdown({
-      wrapperComponent: 'post',
+    ...[
+      { exclude: [englishPosts, originalPosts], wrapperComponent: 'post', headEnabled: true },
+      { include: originalPosts, wrapperComponent: 'post', headEnabled: false },
+      { include: englishPosts, wrapperComponent: null, headEnabled: false },
+    ].map(options => Markdown({
+      ...options,
       wrapperClasses: markdownWrapperClasses,
-      headEnabled: true,
       markdownItOptions: {
         quotes: '""\'\'',
       },
@@ -133,7 +148,7 @@ export default defineConfig({
           slugify,
         })
       },
-    }),
+    })),
 
     // https://github.com/antfu/vite-plugin-pwa
     VitePWA({

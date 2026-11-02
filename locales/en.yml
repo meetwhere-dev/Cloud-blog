@@ -35,3 +35,14 @@ resume:
   description: "Yunfeng Wan’s resume: frontend engineering, full-stack business systems, AI applications, work experience, projects, and contact information."
   language: "Resume language"
   onThisPage: "ON THIS PAGE"
+blog:
+  language: Article language
+  empty: No posts yet
+home:
+  title: "Yunfeng Wan [Wàn Yún Fēng]"
+  introduction: "My name is Yunfeng Wan, courtesy name Shaoyun, also known as Cloud. I come from Nanchang, historically known as Yuzhang. Born on October 8, 1993, I now live in Hangzhou."
+  work: "Curious about how things work from an early age, I grew to love code. I work across the full stack, with a particular passion for frontend development. Beyond programming, I enjoy anime and look after several cats, serving daily as their devoted litter-box attendant. I am also a Dota enthusiast—a proud member of the “Dota faithful.”"
+  interests: "My interests lie less in fame than in fascinating gadgets. New digital devices always catch my eye, and I especially enjoy browsing secondhand marketplaces for overlooked treasures at bargain prices. In quieter moments, I spend time with my cats and listen to New Age music to let the worries of the day drift away."
+  resume: "View my resume →"
+  elsewhere: "You can also find me online:"
+  bilibili: "Bilibili"
