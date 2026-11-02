@@ -5,10 +5,10 @@
 useHead({
   title: 'Cloud Wan\'s Blog',
   meta: [
-    { name: 'description', content: 'Cloud Wan\'s Blog, frontend engineer' },
+    { name: 'description', content: 'Cloud Wan’s personal blog, projects and resume — frontend, full-stack development and AI applications.' },
     {
       name: 'theme-color',
-      content: computed(() => isDark.value ? '#00aba9' : '#ffffff'),
+      content: computed(() => isDark.value ? '#121212' : '#237461'),
     },
   ],
   link: [

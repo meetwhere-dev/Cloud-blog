@@ -7,7 +7,6 @@ declare module '@vue/runtime-core' {
   export interface GlobalComponents {
     AppLink: typeof import('./components/AppLink.vue')['default']
     BlogAssistant: typeof import('./components/BlogAssistant.vue')['default']
-    Counter: typeof import('./components/Counter.vue')['default']
     Footer: typeof import('./components/Footer.vue')['default']
     ListPosts: typeof import('./components/ListPosts.vue')['default']
     NavBar: typeof import('./components/NavBar.vue')['default']

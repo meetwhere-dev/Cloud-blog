@@ -1,7 +1,7 @@
-## i18n
+# 界面语言
 
-This directory is to serve your locale translation files. YAML under this folder would be loaded automatically and register with their filenames as locale code.
+`zh-CN.yml` 和 `en.yml` 分别维护中文与英文界面文案，由 `src/modules/i18n.ts` 自动加载。
 
-Check out [`vue-i18n`](https://github.com/intlify/vue-i18n-next) for more details.
+新增文案时同步维护两种语言的键。文章译文放在 `src/content/posts/en/`，英文简历放在 `src/content/resume.en.md`，不放在界面语言文件中。
 
-If you are using VS Code, [`i18n Ally`](https://github.com/lokalise/i18n-ally) is recommended to make the i18n experience better.
+AI 助手的按钮和状态跟随界面语言；回答语言由访客问题决定，详见 `docs/blog-assistant.md`。

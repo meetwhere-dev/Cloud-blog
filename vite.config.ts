@@ -61,6 +61,7 @@ export default defineConfig({
     // https://github.com/hannoeru/vite-plugin-pages
     Pages({
       extensions: ['vue', 'md'],
+      exclude: ['**/README.md'],
       extendRoute(route) {
         const path = resolve(__dirname, route.component.slice(1))
 
@@ -114,7 +115,6 @@ export default defineConfig({
     Unocss(),
 
     // https://github.com/antfu/vite-plugin-vue-markdown
-    // Don't need this? Try vitesse-lite: https://github.com/antfu/vitesse-lite
     ...[
       { exclude: [englishPosts, originalPosts], wrapperComponent: 'post', headEnabled: true },
       { include: originalPosts, wrapperComponent: 'post', headEnabled: false },
@@ -155,9 +155,15 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'safari-pinned-tab.svg'],
       manifest: {
-        name: 'Vitesse',
-        short_name: 'Vitesse',
-        theme_color: '#ffffff',
+        name: 'Cloud Blog · 万云峰',
+        short_name: 'Cloud Blog',
+        description: '万云峰的个人博客、项目作品与简历，记录前端、全栈开发和 AI 应用实践。',
+        lang: 'zh-CN',
+        start_url: '/',
+        scope: '/',
+        display: 'standalone',
+        background_color: '#f0f5ef',
+        theme_color: '#237461',
         icons: [
           {
             src: '/pwa-192x192.png',
